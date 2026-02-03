@@ -17,19 +17,19 @@ export default function RoleCard({ role, name }) {
                 padding: 30,
                 border: '3px dashed #555',
                 borderRadius: 15,
-                background: isRevealed ? '#fff' : '#333',
-                color: isRevealed ? '#000' : '#aaa',
+                background: isRevealed ? '#0d1141' : '#0d1141',
+                color: isRevealed ? '#6b94ec' : '#6b94ec',
                 cursor: 'pointer',
                 margin: '20px auto',
                 width: '80%'
             }}>
-            <h3>Hallo {name}</h3>
-            <p style={{fontSize: 14}}>Halte gedrückt, um deine Rolle zu sehen</p>
+            <h2>Hallo {name}</h2>
+            <p style={{fontSize: 14}}></p>
             
-            <div style={{fontSize: 40, fontWeight: 'bold', marginTop: 20}}>
-                {isRevealed ? role : "???"}
+            <div style={{fontSize: 20, fontWeight: 'bold', marginTop: 20}}>
+                {isRevealed ? role : "hier gedrückt halten!"}
             </div>
-            {isRevealed && <p style={{color: 'red', fontSize: 12}}>Nicht zeigen!</p>}
+            
         </div>
     );
 }

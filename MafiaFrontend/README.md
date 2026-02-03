@@ -1,13 +1,21 @@
 # Server starten:
 
-PS D:\\PartySpiel-Mafia\\MafiaFrontend> npm run dev -- --host
+PS D:\\PartySpiel-Mafia\\MafiaFrontend> 
 
-PS D:\\PartySpiel-Mafia\\MafiaBackend> node server.js
+cd MafiaFrontend
+
+npm run dev -- --host
+
+
+PS D:\\PartySpiel-Mafia\\MafiaBackend> 
+
+cd MafiaBackend
+
+node server.js
 
 
 
-# **BEI PROBLEMEN:** 
-
+# **BEI PROBLEMEN:**
 
 ## Tunnel-Adresse prüfen:
 
@@ -24,6 +32,7 @@ PS D:\\PartySpiel-Mafia\\MafiaBackend> node server.js
 ## "Öffentlich" prüfen
 
 Manchmal setzt VS Code beim Netzwerkwechsel die Ports wieder auf "Privat".
+
 
 
 1. Rechtsklick auf die Ports im Reiter "Ports".
