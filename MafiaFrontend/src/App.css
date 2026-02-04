@@ -1,42 +1,451 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+/* =========================================
+   1. GLOBALE BASICS & RESET
+   ========================================= */
+:root {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f0f0f0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: opacity 0.2s;
+  font-family: inherit;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* =========================================
+   2. HOST CONSOLE (Großbildschirm)
+   ========================================= */
+.host-container {
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  gap: 20px;
+  background-color: #000000;
+  align-items: flex-start; /* Verhindert Stretching */
+}
+
+.host-panel {
+  background: rgb(83, 48, 48);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(114, 107, 107, 0.1);
+}
+
+.host-panel-left {
+  flex: 1;
+  min-width: 300px;
+}
+
+.host-panel-right {
+  flex: 2;
+}
+
+.phase-display {
+  padding: 15px;
+  background: #ffffff;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border-left: 5px solid blue;
+}
+
+.phase-title {
+  margin: 0;
+  color: #0044cc;
+  font-size: 1.2rem;
+}
+
+.announcement-banner {
+  padding: 15px;
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.qr-container {
+  margin-top: 30px;
   text-align: center;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* Host Buttons */
+.btn-emergency {
+  padding: 12px;
+  background: #666;
+  color: white;
+  width: 100%;
+  margin-top: 10px;
+  font-weight: bold;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.danger-zone {
+  margin-top: 40px;
+  border-top: 2px solid #ccc;
+  padding-top: 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.btn-restart {
+  padding: 10px 20px;
+  background: #ff9800; 
+  color: white;
+  margin-right: 100px;
+  margin-left: 50px;
+  margin-bottom: 10px;
 }
 
-.card {
-  padding: 2em;
+.btn-kick {
+  padding: 10px 20px;
+  background: #d32f2f; 
+  color: white;
 }
 
-.read-the-docs {
-  color: #888;
+/* Tabelle */
+.player-table {
+  width: 80%;
+  border-collapse: collapse;
+}
+
+.player-table th {
+  background: #333;
+  color: white;
+  text-align: left;
+  padding: 12px;
+}
+
+.player-table td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.row-alive {
+  background-color: white;
+}
+
+.row-dead {
+  background-color: #ffebeb;
+  color: #999;
+}
+
+.role-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: rgb(141, 139, 139);
+  font-weight: bold;
+  font-size: 0.9em;
+  display: inline-block;
+}
+
+.badge-mafia { background: #737679; }
+.badge-arzt { background: #737679; }
+.badge-detektiv { background: #737679; }
+.badge-default { background: #737679; }
+
+/* =========================================
+   3. MOBILE PLAYER VIEW (Handy)
+   ========================================= */
+.login-container {
+  padding: 20px;
+  text-align: center;
+  max-width: 400px;
+  margin: 40px auto;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.login-input {
+  padding: 12px;
+  font-size: 16px;
+  width: 100%;
+  margin-bottom: 10px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+.login-input:focus {
+  border-color: #ce8989;
+  outline: none;
+}
+
+.btn-login {
+  padding: 12px;
+  width: 100%;
+  background: #ce8989;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.btn-host-login {
+  padding: 10px;
+  background: #555;
+  color: white;
+  margin-top: 30px;
+  font-size: 14px;
+}
+
+.player-app-container {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  min-height: 100vh;
+  background: #fff;
+}
+
+.btn-logout {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 5px 12px;
+  font-size: 18px;
+  background: #f0f0f0;
+  color: #333;
+  border-radius: 50%;
+}
+
+.header-bar {
+  margin-bottom: 30px;
+  border-bottom: 3px solid #af5151;
+  padding-bottom: 20px;
+  margin-top: 20px;
+}
+
+.btn-big-action {
+  padding: 25px;
+  color: white;
+  width: 100%;
+  margin-top: 20px;
+  font-weight: bold;
+  font-size: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+.bg-blue { background: #1976d2; }
+.bg-orange { background: #f57c00; }
+
+/* Dead Overlay */
+.dead-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.9);
+  color: #ff5252;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  text-align: center;
+  padding: 20px;
+}
+
+/* =========================================
+   4. COMPONENTS
+   ========================================= */
+
+/* RoleCard */
+.role-card {
+  user-select: none;
+  padding: 40px 20px;
+  border: 4px dashed #555;
+  border-radius: 15px;
+  margin: 20px auto;
+  width: 90%;
+  max-width: 350px;
+  transition: all 0.2s ease;
+  background: #1a237e; 
+  color: #8c9eff;
+  touch-action: manipulation; /* Verbessert Touch-Reaktion */
+}
+
+.role-card.revealed {
+  background: #fff;
+  color: #000;
+  border-style: solid;
+  border-color: #000;
+}
+
+/* Lobby */
+.lobby-host-box {
+  background: #e3f2fd;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.lobby-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.btn-start-game {
+  padding: 15px;
+  background: #2e7d32;
+  color: white;
+  font-size: 18px;
+  width: 100%;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.player-list-item {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  font-size: 18px;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Night Actions */
+.action-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin: 10px 0;
+  padding: 20px;
+  color: white;
+  font-size: 18px;
+  text-align: left;
+  border-radius: 8px;
+}
+
+.btn-mafia {
+  background: #424242;
+  border: 2px solid #d32f2f;
+}
+.btn-mafia.voted {
+  background: #b71c1c;
+  font-weight: bold;
+  box-shadow: 0 0 10px #d32f2f;
+}
+
+.btn-doctor { background: #2e7d32; }
+.btn-detective { background: #1565c0; }
+
+/* Day Actions */
+.btn-vote {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 20px;
+  background: #f5f5f5;
+  border: 2px solid #333;
+  color: #333;
+  font-weight: bold;
+}
+
+.btn-vote.selected {
+  background: #ff9800;
+  color: white;
+  border-color: #e65100;
+  transform: scale(1.02);
+}
+
+/* =========================================
+   5. NACHT MODUS (Dynamisch)
+   ========================================= */
+
+.player-app-container.night-mode {
+  background-color: #0f1016; 
+  color: #e0e0e0;            
+  transition: background-color 1s ease, color 1s ease; 
+}
+
+.night-mode .header-bar {
+  border-bottom-color: #444;
+}
+
+.night-mode .btn-logout {
+  background-color: #333;
+  color: #fff;
+}
+
+/* --- Voting Styles --- */
+
+.vote-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.tiebreaker-info {
+  background-color: rgba(255, 165, 0, 0.1); /* Leichtes Orange im Hintergrund */
+  border: 1px solid orange;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  max-width: 90%;
+}
+
+.tie-title {
+  color: orange;
+  margin-top: 0;
+  margin-bottom: 5px;
+  font-weight: bold;
+  text-transform: uppercase;
+  animation: pulse 2s infinite; /* Optional: Lässt "STICHWAHL" pulsieren */
+}
+
+.candidates-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.vote-confirmed {
+  color: #4caf50; /* Grün */
+  font-style: italic;
+  margin-top: 10px;
+}
+
+/* Optional: Kleine Animation */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }

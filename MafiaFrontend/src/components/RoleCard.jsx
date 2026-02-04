@@ -1,4 +1,4 @@
-//RoleCard.jsx
+// components/RoleCard.jsx
 import React, { useState } from 'react';
 
 export default function RoleCard({ role, name }) {
@@ -12,17 +12,8 @@ export default function RoleCard({ role, name }) {
         <div 
             onMouseDown={startReveal} onMouseUp={endReveal} onMouseLeave={endReveal}
             onTouchStart={startReveal} onTouchEnd={endReveal}
-            style={{
-                userSelect: 'none',
-                padding: 30,
-                border: '3px dashed #555',
-                borderRadius: 15,
-                background: isRevealed ? '#0d1141' : '#0d1141',
-                color: isRevealed ? '#6b94ec' : '#6b94ec',
-                cursor: 'pointer',
-                margin: '20px auto',
-                width: '80%'
-            }}>
+            className={`role-card ${isRevealed ? 'revealed' : ''}`}>
+            
             <h2>Hallo {name}</h2>
             <p style={{fontSize: 14}}></p>
             
