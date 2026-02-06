@@ -11,8 +11,8 @@ import RoleCard from './components/RoleCard';
 import NightPhase from './components/NightPhase';
 import DayPhase from './components/DayPhase';
 
-const SERVER_URL = "https://ffq399v6-5000.euw.devtunnels.ms";
-const CLIENT_URL = "https://ffq399v6-5173.euw.devtunnels.ms";
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+const CLIENT_URL = import.meta.env.VITE_CLIENT_URL;
 
 function App() {
   const [socket, setSocket] = useState(null);
@@ -27,7 +27,7 @@ function App() {
   const playerId = useRef(localStorage.getItem("mafia_pid") || uuidv4());
 
   const playSound = () => {
-    const audio = new Audio('/sound_morning.mp3');
+    const audio = new Audio('sounds/sound_morning.mp3');
     audio.play().catch(e => console.log("Audio Autoplay blockiert", e));
   };
 
@@ -121,7 +121,6 @@ function App() {
           Swal.fire({
             title: 'Detektiv Ergebnis',
             text: data.isEvil ? "Mafia!" : "Bürger.",
-            icon: data.isEvil ? 'error' : 'success',
             confirmButtonText: 'Verstanden'
           });
         }
@@ -270,32 +269,50 @@ function App() {
   // REGULAR PLAYER VIEW (Handy)
   // ------------------------------------------------------------------
 
-  if (!me) return (
-    <div className="login-container">
-      <h1>Mafia Login</h1>
-      <div style={{ marginBottom: 40 }}>
-        <input id="nameInput" placeholder="Dein Name" className="login-input" />
-        <button onClick={() => {
+if (!me) return (
+  <div className="login-container">
+    
+    {/* 1. Überschrift */}
+    <h1 className="mafia-title">MAFIA</h1>
+
+    {/* 2. Eingabegruppe (Nebeneinander) */}
+    <div className="input-group">
+      <input 
+        id="nameInput" 
+        placeholder="Dein Name" 
+        className="login-input" 
+      />
+      <button 
+        className="btn-login"
+        onClick={() => {
           const n = document.getElementById("nameInput").value;
           if (!n) return;
           localStorage.setItem("mafia_name", n);
           socket.emit('joinGame', { playerId: playerId.current, name: n });
-        }} className="btn-login">Spiel Beitreten</button>
-      </div>
-      <hr />
-      <div style={{ marginTop: 200 }}>
-        <p>Nur für SPIELLEITER (NOTEBOOK)!!!</p>
-        <button onClick={() => {
+        }} 
+      >
+        Beitreten
+      </button>
+    </div>
+
+    {/* 3. Host Bereich (Ganz unten) */}
+    <div className="host-footer">
+      <button 
+        className="btn-host-login"
+        onClick={() => {
           socket.emit('registerHost');
           playerId.current = 'host';
           setMe({ name: "Spielleiter", role: "Spectator", playerId: "host", isAlive: true });
           setIsHostConsole(true);
-        }} className="btn-host-login">
-          🖥️ Lobby erröffnen
-        </button>
-      </div>
+        }} 
+      >
+        🖥️ Lobby eröffnen
+      </button>
+      <p className="host-warning">Nur für SPIELLEITER (NOTEBOOK)!!!</p>
     </div>
-  );
+
+  </div>
+);
 
   const isNight = gamePhase.startsWith('NIGHT');
   return (

@@ -220,12 +220,11 @@ function nextNightPhase() {
         }
         else { 
             // Direkt zum Tag (kurze Pause für Spannung)
-            transitionToPhase("DAY_ANNOUNCE", "Die Sonne geht bald auf...", "morning_soon_sound", 4000);
+            transitionToPhase("DAY_ANNOUNCE", "Die Sonne geht bald auf...", "morning_rooster", 4000);
         }
     } 
     else if (gamePhase === "NIGHT_DOCTOR") {
         if(settings.hasDetective) {
-            // Pause zwischen Arzt und Detektiv
             transitionToPhase("NIGHT_DETECTIVE", "Der Arzt legt sich schlafen...", "doctor_sleep_sound", 4000);
         }
         else { 
@@ -240,12 +239,10 @@ function nextNightPhase() {
 function processPhaseStart(phase) {
     io.emit('gameStateUpdate', { gamePhase: phase });
 
-    // HIER JETZT ANSAGE FÜR DIE AKTIVE ROLLE (Audio dass sie aufwachen sollen)
-    // Das hören alle, aber nur die Rolle sieht gleich die Buttons
     let wakeUpMsg = "";
     let wakeUpSound = "";
 
-    if (phase === 'NIGHT_MAFIA') { wakeUpMsg = "Mafia erwache!"; wakeUpSound = "mafia_wake"; }
+    if (phase === 'NIGHT_MAFIA') { wakeUpMsg = "Mafia erwache!"; wakeUpSound = "mafia_sleep"; }
     if (phase === 'NIGHT_DOCTOR') { wakeUpMsg = "Arzt erwache!"; wakeUpSound = "doctor_wake"; }
     if (phase === 'NIGHT_DETECTIVE') { wakeUpMsg = "Detektiv erwache!"; wakeUpSound = "detective_wake"; }
 
@@ -279,16 +276,12 @@ function processPhaseStart(phase) {
 
 function startDay() {
     gamePhase = "DAY_ANNOUNCE";
-    // ... (restlicher Code wie vorher) ...
-    // HIER BITTE DEN CODE VOM VORHERIGEN SCHRITT EINFÜGEN ODER SO LASSEN
-    // (Die Logik der Auswertung bleibt gleich)
     
-    let victimId = Object.values(nightActions.mafiaVotes)[0]; // Vereinfacht: Nimmt ersten Vote (oder Mehrheit)
-    // Besser wäre: Check Most Voted bei Mafia
+    let victimId = Object.values(nightActions.mafiaVotes)[0]; 
     
     let message = "Es war eine ruhige Nacht. Niemand ist gestorben.";
 
-    // Auswertung Mafia Vote (einfachste Logik: Mehrheit ermitteln)
+    // Auswertung Mafia Vote 
     const counts = {};
     Object.values(nightActions.mafiaVotes).forEach(v => counts[v] = (counts[v] || 0) + 1);
     let maxVotes = 0;

@@ -5,7 +5,6 @@ export default function NightPhase({ socket, phase, me, players }) {
     const [mafiaVotes, setMafiaVotes] = useState({});
     const [hasActed, setHasActed] = useState(false);
     
-    // State für die Übergangsnachrichten (Toast-Message)
     const [announcement, setAnnouncement] = useState("");
 
     // --- 1. DER ZENTRALE EFFECT FÜR SOUNDS & UPDATES ---
@@ -15,7 +14,6 @@ export default function NightPhase({ socket, phase, me, players }) {
             setAnnouncement(message);
 
             if (sound) {
-                // Pfad: /public/sounds/NAME.mp3
                 const audio = new Audio(`/sounds/${sound}.mp3`);
                 audio.play().catch(err => {
                     console.error("Fehler beim Abspielen:", err);
@@ -27,7 +25,6 @@ export default function NightPhase({ socket, phase, me, players }) {
             }
             console.log(`[SOUND TRIGGER] Spiele Sound: ${sound}`);
             
-            // Text nach 3.5 Sekunden ausblenden
             setTimeout(() => setAnnouncement(""), 3500);
         };
 
@@ -40,7 +37,7 @@ export default function NightPhase({ socket, phase, me, players }) {
         socket.on('nightAnnouncement', handleAnnouncement);
         socket.on('mafiaVoteUpdate', handleMafiaUpdate);
         
-        // D) Reset bei Phasenwechsel (z.B. Wechsel von Mafia zu Arzt)
+        // D) Reset bei Phasenwechsel 
         setHasActed(false);
         setMafiaVotes({});
 
@@ -145,7 +142,7 @@ export default function NightPhase({ socket, phase, me, players }) {
         )
     }
 
-    // E) DEFAULT: SCHLAFEN (Für Unbeteiligte oder Tote)
+    // E) DEFAULT: SCHLAFEN 
     return (
         <div style={{marginTop: 50, textAlign: 'center'}}>
             <h2>NACHT</h2>

@@ -26,7 +26,7 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates }) 
         <div className="day-phase-container">
             <h1>{phase === 'DAY_DISCUSS' ? 'DISKUSSION 🗣️' : 'ABSTIMMUNG 🗳️'}</h1>
             
-            {phase === 'DAY_ANNOUNCE' && <p>Hört auf die Ansage...</p>}
+            {phase === 'DAY_ANNOUNCE' && <p>Bereitet euch für die Abstimmung...</p>}
             
             {(phase === 'DAY_VOTE' || phase === 'DAY_TIEBREAKER') && (
                 <div className="vote-section">
