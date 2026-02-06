@@ -4,7 +4,7 @@ import io from 'socket.io-client';
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'react-qr-code';
 import Swal from 'sweetalert2';
-import './App.css'; 
+import './App.css';
 
 import Lobby from './components/Lobby';
 import RoleCard from './components/RoleCard';
@@ -23,6 +23,8 @@ function App() {
   const [announcement, setAnnouncement] = useState("");
   const [tieCandidates, setTieCandidates] = useState([]);
   const [isHostConsole, setIsHostConsole] = useState(false);
+  const [currentVotes, setCurrentVotes] = useState({});
+  const [roleConfirmed, setRoleConfirmed] = useState(false);
 
   const playerId = useRef(localStorage.getItem("mafia_pid") || uuidv4());
 
@@ -74,6 +76,11 @@ function App() {
         setGamePhase(data.gamePhase);
         setSettings(data.settings);
         if (data.tieCandidates) setTieCandidates(data.tieCandidates);
+        if (data.dayVotes) setCurrentVotes(data.dayVotes);
+      });
+
+      socket.on('voteUpdate', (votes) => {
+        setCurrentVotes(votes);
       });
 
       socket.on('updatePlayerList', (list) => setPlayers(list));
@@ -135,19 +142,21 @@ function App() {
         setPlayers(updatedPlayerList);
         setTieCandidates([]);
         setAnnouncement("");
+        setCurrentVotes({});
+        setRoleConfirmed(false);
 
         if (me && me.playerId !== 'host') {
           setMe(prev => ({ ...prev, role: "Noch nicht verteilt", isAlive: true }));
         }
 
         if (!isHostConsole) {
-            Swal.fire({
-                icon: 'info',
-                title: 'Neustart',
-                text: "Das Spiel wurde vom Host neu gestartet!",
-                timer: 5000,
-                showConfirmButton: false
-            });
+          Swal.fire({
+            icon: 'info',
+            title: 'Neustart',
+            text: "Das Spiel wurde vom Host neu gestartet!",
+            timer: 5000,
+            showConfirmButton: false
+          });
         }
       });
 
@@ -202,13 +211,13 @@ function App() {
 
             <div className="danger-zone">
               <h4>Gefahrenzone</h4>
-              
+
               {/* ERSATZ FÜR CONFIRM - RESET */}
-              <button 
+              <button
                 onClick={() => handleHostAction(
-                    "Spiel neu starten?", 
-                    "Der aktuelle Fortschritt geht verloren und alle Rollen werden zurückgesetzt.", 
-                    () => socket.emit('resetGame')
+                  "Spiel neu starten?",
+                  "Der aktuelle Fortschritt geht verloren und alle Rollen werden zurückgesetzt.",
+                  () => socket.emit('resetGame')
                 )}
                 className="btn-restart"
               >
@@ -216,12 +225,12 @@ function App() {
               </button>
 
               {/* ERSATZ FÜR CONFIRM - KICK ALL */}
-              <button 
+              <button
                 onClick={() => handleHostAction(
-                    "ALLE KICKEN?", 
-                    "Alle Spieler werden vom Server getrennt. Das ist unwiderruflich.", 
-                    () => socket.emit('kickAll'),
-                    '#ff0000' // Extra rot
+                  "ALLE KICKEN?",
+                  "Alle Spieler werden vom Server getrennt. Das ist unwiderruflich.",
+                  () => socket.emit('kickAll'),
+                  '#ff0000' // Extra rot
                 )}
                 className="btn-kick"
               >
@@ -247,9 +256,8 @@ function App() {
                 <tr key={p.playerId} className={p.isAlive ? 'row-alive' : 'row-dead'}>
                   <td style={{ fontWeight: 'bold' }}>{p.name}</td>
                   <td>
-                    <span className={`role-badge ${
-                        p.role === 'Mafia' ? 'badge-mafia' : 
-                        (p.role === 'Arzt' ? 'badge-arzt' : 
+                    <span className={`role-badge ${p.role === 'Mafia' ? 'badge-mafia' :
+                      (p.role === 'Arzt' ? 'badge-arzt' :
                         (p.role === 'Detektiv' ? 'badge-detektiv' : 'badge-default'))
                       }`}>
                       {p.role}
@@ -269,50 +277,50 @@ function App() {
   // REGULAR PLAYER VIEW (Handy)
   // ------------------------------------------------------------------
 
-if (!me) return (
-  <div className="login-container">
-    
-    {/* 1. Überschrift */}
-    <h1 className="mafia-title">MAFIA</h1>
+  if (!me) return (
+    <div className="login-container">
 
-    {/* 2. Eingabegruppe (Nebeneinander) */}
-    <div className="input-group">
-      <input 
-        id="nameInput" 
-        placeholder="Dein Name" 
-        className="login-input" 
-      />
-      <button 
-        className="btn-login"
-        onClick={() => {
-          const n = document.getElementById("nameInput").value;
-          if (!n) return;
-          localStorage.setItem("mafia_name", n);
-          socket.emit('joinGame', { playerId: playerId.current, name: n });
-        }} 
-      >
-        Beitreten
-      </button>
+      {/* 1. Überschrift */}
+      <h1 className="mafia-title">MAFIA</h1>
+
+      {/* 2. Eingabegruppe (Nebeneinander) */}
+      <div className="input-group">
+        <input
+          id="nameInput"
+          placeholder="Dein Name"
+          className="login-input"
+        />
+        <button
+          className="btn-login"
+          onClick={() => {
+            const n = document.getElementById("nameInput").value;
+            if (!n) return;
+            localStorage.setItem("mafia_name", n);
+            socket.emit('joinGame', { playerId: playerId.current, name: n });
+          }}
+        >
+          Beitreten
+        </button>
+      </div>
+
+      {/* 3. Host Bereich (Ganz unten) */}
+      <div className="host-footer">
+        <button
+          className="btn-host-login"
+          onClick={() => {
+            socket.emit('registerHost');
+            playerId.current = 'host';
+            setMe({ name: "Spielleiter", role: "Spectator", playerId: "host", isAlive: true });
+            setIsHostConsole(true);
+          }}
+        >
+          🖥️ Lobby eröffnen
+        </button>
+        <p className="host-warning">Nur für SPIELLEITER (NOTEBOOK)!!!</p>
+      </div>
+
     </div>
-
-    {/* 3. Host Bereich (Ganz unten) */}
-    <div className="host-footer">
-      <button 
-        className="btn-host-login"
-        onClick={() => {
-          socket.emit('registerHost');
-          playerId.current = 'host';
-          setMe({ name: "Spielleiter", role: "Spectator", playerId: "host", isAlive: true });
-          setIsHostConsole(true);
-        }} 
-      >
-        🖥️ Lobby eröffnen
-      </button>
-      <p className="host-warning">Nur für SPIELLEITER (NOTEBOOK)!!!</p>
-    </div>
-
-  </div>
-);
+  );
 
   const isNight = gamePhase.startsWith('NIGHT');
   return (
@@ -320,8 +328,8 @@ if (!me) return (
       <button onClick={logout} className="btn-logout">❌</button>
       <div className="header-bar">
 
-        <h3>Mafia - Phase: {gamePhase}</h3>
-        <h2>{me.role !== 'Spectator' && <p>Du bist: <strong>{me.name}</strong></p>}</h2>
+        <h4>Mafia - Phase: {gamePhase}</h4>
+        <h4>{me.role !== 'Spectator' && <p>Du bist: <strong>{me.name}</strong></p>}</h4>
 
       </div>
 
@@ -335,8 +343,21 @@ if (!me) return (
       {gamePhase === 'ROLE_REVEAL' && (
         <div>
           <RoleCard role={me.role} name={me.name} />
-          <button onClick={() => socket.emit('playerReady', me.playerId)} className="btn-big-action bg-blue">
-            ICH HABE MEINE ROLLE GESEHEN (BEREIT)
+
+          <button
+            disabled={roleConfirmed}
+            onClick={() => {
+              socket.emit('playerReady', me.playerId);
+              setRoleConfirmed(true);
+            }}
+            className="btn-big-action bg-blue"
+            style={{
+              backgroundColor: roleConfirmed ? '#7f8c8d' : '#1976d2',
+              cursor: roleConfirmed ? 'default' : 'pointer',
+              transform: roleConfirmed ? 'none' : '' 
+            }}
+          >
+            {roleConfirmed ? "WARTE AUF ANDERE SPIELER..." : "ICH HABE MEINE ROLLE GESEHEN (BEREIT) "}
           </button>
         </div>
       )}
@@ -349,7 +370,7 @@ if (!me) return (
       )}
 
       {gamePhase.startsWith('NIGHT') && <NightPhase socket={socket} phase={gamePhase} me={me} players={players} />}
-      {gamePhase.startsWith('DAY') && <DayPhase socket={socket} phase={gamePhase} me={me} players={players} tieCandidates={tieCandidates} />}
+      {gamePhase.startsWith('DAY') && <DayPhase socket={socket} phase={gamePhase} me={me} players={players} tieCandidates={tieCandidates} currentVotes={currentVotes} />}
 
       {/* OVERLAY LOGIK */}
       {!me.isAlive && me.role !== 'Spectator' && gamePhase !== 'LOBBY' && gamePhase !== 'GAME_OVER' && (

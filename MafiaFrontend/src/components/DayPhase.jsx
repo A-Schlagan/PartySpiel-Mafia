@@ -1,10 +1,9 @@
 // components/DayPhase.jsx
 import React, { useState, useEffect } from 'react';
 
-export default function DayPhase({ socket, phase, me, players, tieCandidates }) {
+export default function DayPhase({ socket, phase, me, players, tieCandidates, currentVotes }) {
     const [votedFor, setVotedFor] = useState(null);
 
-    // Reset Vote, wenn die Phase von VOTE auf TIEBREAKER wechselt
     useEffect(() => {
         setVotedFor(null);
     }, [phase]);
@@ -14,13 +13,24 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates }) 
         socket.emit('voteDay', { voterId: me.playerId, targetId });
     };
 
-    // Filter: Wen darf man wählen?
     let candidates = players.filter(p => p.isAlive && p.playerId !== me.playerId);
     
-    // Bei Stichwahl (Tiebreaker) nur die Gleichstand-Kandidaten anzeigen
     if(phase === 'DAY_TIEBREAKER') {
         candidates = candidates.filter(p => tieCandidates.includes(p.playerId));
     }
+
+    const getVotersForCandidate = (candidateId) => {
+        // currentVotes ist z.B. { "spielerA_ID": "spielerB_ID", "spielerC_ID": "spielerB_ID" }
+        // Wir suchen alle Keys (Wähler), deren Value == candidateId ist
+        const voters = Object.entries(currentVotes || {})
+            .filter(([voterId, targetId]) => targetId === candidateId)
+            .map(([voterId]) => {
+                const p = players.find(pl => pl.playerId === voterId);
+                return p ? p.name : 'Unbekannt';
+            });
+        
+        return voters;
+    };
 
     return (
         <div className="day-phase-container">
@@ -45,16 +55,29 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates }) 
                     )}
 
                     <div className="candidates-grid">
-                        {candidates.map(p => (
-                            <button key={p.playerId} 
-                                onClick={() => vote(p.playerId)}
-                                disabled={votedFor !== null} // Nur 1x wählen
-                                className={`btn-vote ${votedFor === p.playerId ? 'selected' : ''}`}>
-                                👉 {p.name}
-                            </button>
-                        ))}
+                        {candidates.map(p => {
+                            const voters = getVotersForCandidate(p.playerId);
+                            
+                            return (
+                                <button key={p.playerId} 
+                                    onClick={() => vote(p.playerId)}
+                                    disabled={votedFor !== null} 
+                                    className={`btn-vote ${votedFor === p.playerId ? 'selected' : ''}`}
+ // !!!!!!!!!Styling für bessere Lesbarkeit der Liste anpassen
+                                    style={{ display: 'flex', /*flexDirection: 'column',*/ alignItems: 'center', gap: '5px' }}
+                                >
+                                    <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>👉 {p.name}</span>
+                                    
+                                    {voters.length > 0 && (
+                                        <div style={{ fontSize: '0.8rem', color: '#154717', marginTop: '2px' }}>
+                                            {voters.map(v => ` ${v}`).join(', ')}
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
-
+                    
                     {votedFor && <p className="vote-confirmed">Stimme abgegeben.</p>}
                 </div>
             )}

@@ -1,45 +1,59 @@
 /* =========================================
-   1. GLOBALE BASICS & RESET
+   1. GLOBALE BASICS & VARIABLEN
    ========================================= */
 :root {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: light;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --color-bg-light: #f0f0f0;
+  --color-bg-dark: #0f1016;
+  --color-text-main: #333;
+  --color-text-light: #ffffff;
+  
+  --color-mafia-red: #d32f2f;
+  --color-mafia-dark-red: #8b0000;
+  --color-accent-blue: #1976d2;
+  --color-accent-green: #2e7d32;
+  --color-accent-orange: #ff9800;
+  
+  --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #f0f0f0;
+  background-color: var(--color-bg-light);
   min-width: 320px;
   min-height: 100vh;
+  font-family: var(--font-main);
+  line-height: 1.5;
+  color: var(--color-text-main);
+  -webkit-font-smoothing: antialiased;
 }
 
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
+/* Generelle Button Styles */
 button {
   cursor: pointer;
   border: none;
   border-radius: 5px;
   font-size: 16px;
-  transition: opacity 0.2s;
   font-family: inherit;
+  transition: opacity 0.2s, transform 0.1s; 
 }
 
 button:hover {
   opacity: 0.9;
 }
 
+button:active {
+  transform: scale(0.98); /* Leichtes Schrumpfen beim Klicken */
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+  transform: none;
 }
 
 /* =========================================
@@ -51,7 +65,8 @@ button:disabled {
   display: flex;
   gap: 20px;
   background-color: #000000;
-  align-items: flex-start; /* Verhindert Stretching */
+  align-items: flex-start;
+  color: var(--color-text-main); /* Reset Textfarbe für Inneres */
 }
 
 .host-panel {
@@ -70,9 +85,12 @@ button:disabled {
   flex: 2;
 }
 
+.host-panel h2, .host-panel h3, .host-panel h4 {
+    color: #fff; 
+}
+
 .phase-display {
   padding: 15px;
-  background: #ffffff;
   border-radius: 8px;
   margin-bottom: 15px;
   border-left: 5px solid blue;
@@ -82,6 +100,7 @@ button:disabled {
   margin: 0;
   color: #0044cc;
   font-size: 1.2rem;
+  font-weight: bold;
 }
 
 .announcement-banner {
@@ -116,27 +135,36 @@ button:disabled {
   margin-top: 40px;
   border-top: 2px solid #ccc;
   padding-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+}
+
+.danger-zone h4 {
+    width: 100%;
+    margin-top: 0;
 }
 
 .btn-restart {
   padding: 10px 20px;
-  background: #ff9800; 
+  background: var(--color-accent-orange); 
   color: white;
-  margin-right: 100px;
-  margin-left: 50px;
-  margin-bottom: 10px;
 }
 
 .btn-kick {
   padding: 10px 20px;
-  background: #d32f2f; 
+  background: var(--color-mafia-red); 
   color: white;
 }
 
 /* Tabelle */
 .player-table {
-  width: 80%;
+  width: 100%; 
   border-collapse: collapse;
+  background: #ffffff; 
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .player-table th {
@@ -149,6 +177,7 @@ button:disabled {
 .player-table td {
   padding: 12px;
   border-bottom: 1px solid #ddd;
+  color: #333;
 }
 
 .row-alive {
@@ -163,24 +192,23 @@ button:disabled {
 .role-badge {
   padding: 4px 10px;
   border-radius: 12px;
-  color: rgb(141, 139, 139);
+  background: #555;
+  color: #555; 
   font-weight: bold;
-  font-size: 0.9em;
+  font-size: 0.85em;
   display: inline-block;
+  width: 120px;
 }
 
-.badge-mafia { background: #737679; }
-.badge-arzt { background: #737679; }
-.badge-detektiv { background: #737679; }
-.badge-default { background: #737679; }
+.badge-mafia { background: #555; } 
+.badge-arzt { background: #555; }
+.badge-detektiv { background: #555; }
+
 
 /* =========================================
-   3. MOBILE PLAYER VIEW (Handy)
+   3. MOBILE PLAYER VIEW (Login Screen)
    ========================================= */
 
-
-
-/* Haupt-Container */
 .login-container {
   background-image: url('images/background-main.png'); 
   background-size: cover;
@@ -192,17 +220,14 @@ button:disabled {
   
   display: flex;
   flex-direction: column;
-  align-items: center; /* Zentriert horizontal */
+  align-items: center; 
   padding: 20px;
-  box-sizing: border-box;
   color: white;
-  font-family: sans-serif;
 }
 
-/* Die Mafia Überschrift */
 .mafia-title {
-  font-size: 4rem;
-  color: #8b0000; /* Dunkelrot */
+  font-size: clamp(3rem, 10vw, 5rem); 
+  color: var(--color-mafia-dark-red);
   text-transform: uppercase;
   font-weight: 900;
   margin-top: 40px;
@@ -210,45 +235,40 @@ button:disabled {
   letter-spacing: 5px;
 }
 
-/* WICHTIG: Container damit Input & Button nebeneinander sind */
 .input-group {
   display: flex;
-  flex-direction: row; /* Nebeneinander */
-  gap: 10px; /* Abstand dazwischen */
-  
+  flex-direction: row; 
+  gap: 10px; 
   width: 100%;
-  max-width: 400px; /* Maximale Breite am PC */
-  
+  max-width: 400px; 
   margin-top: 25vh; 
 }
 
 .login-input {
-  flex: 2; /* 2/3 Platz */
+  flex: 2; 
   padding: 15px;
   font-size: 16px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  background-color: rgba(0, 0, 0, 0.6); 
+  background-color: rgba(0, 0, 0, 0.7); 
   color: white;
   outline: none;
 }
 
 .btn-login {
-  flex: 1; /* 1/3 Platz */
+  flex: 1; 
   padding: 15px;
   background: #ce8989;
-  border: none;
-  border-radius: 8px;
   color: white;
   font-weight: bold;
-  font-size: 16px;
-  cursor: pointer;
-  white-space: nowrap; /* Text nicht umbrechen */
+  white-space: nowrap; 
+}
+.btn-login:hover {
+    background: #e57373;
 }
 
-/* Container für den unteren Bereich (Host) */
 .host-footer {
-  margin-top: auto; /* Schiebt alles nach ganz unten */
+  margin-top: auto; 
   margin-bottom: 20px;
   text-align: center;
   display: flex;
@@ -258,22 +278,26 @@ button:disabled {
 }
 
 .btn-host-login {
-  background: transparent;
+  background: rgba(0,0,0,0.5); 
   border: 1px solid #da4b4b;
   color: #da4b4b;
   padding: 10px 20px;
   border-radius: 20px;
   font-size: 14px;
-  cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .host-warning {
-  color: #666;
+  color: #ccc; 
   font-size: 0.8rem;
   margin: 0;
 }
+
+
+/* =========================================
+   4. IN-GAME PLAYER UI
+   ========================================= */
 
 .player-app-container {
   padding: 20px;
@@ -282,7 +306,8 @@ button:disabled {
   text-align: center;
   position: relative;
   min-height: 100vh;
-  background: #fff;
+  background: #e9e0e0;
+  transition: background-color 1s ease, color 1s ease;
 }
 
 .btn-logout {
@@ -294,12 +319,12 @@ button:disabled {
   background: #f0f0f0;
   color: #333;
   border-radius: 50%;
+  z-index: 10; 
 }
 
 .header-bar {
-  margin-bottom: 30px;
+  margin-bottom: 60px;
   border-bottom: 3px solid #af5151;
-  padding-bottom: 20px;
   margin-top: 20px;
 }
 
@@ -314,10 +339,9 @@ button:disabled {
   box-shadow: 0 4px 6px rgba(0,0,0,0.2);
 }
 
-.bg-blue { background: #1976d2; }
-.bg-orange { background: #f57c00; }
+.bg-blue { background: var(--color-accent-blue); }
+.bg-orange { background: var(--color-accent-orange); }
 
-/* Dead Overlay */
 .dead-overlay {
   position: fixed;
   top: 0;
@@ -330,17 +354,18 @@ button:disabled {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 9999; 
   text-align: center;
   padding: 20px;
 }
 
 /* =========================================
-   4. COMPONENTS
+   5. COMPONENTS (Karten & Listen)
    ========================================= */
 
-/* RoleCard */
 .role-card {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
   user-select: none;
   padding: 40px 20px;
   border: 4px dashed #555;
@@ -348,25 +373,26 @@ button:disabled {
   margin: 20px auto;
   width: 90%;
   max-width: 350px;
-  transition: all 0.2s ease;
-  background: #1a237e; 
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  background: #121646; 
   color: #8c9eff;
-  touch-action: manipulation; /* Verbessert Touch-Reaktion */
+  touch-action: manipulation;
+  cursor: pointer;
 }
 
 .role-card.revealed {
-  background: #fff;
-  color: #000;
+  background: #121646;
+  color: #8c9eff;
   border-style: solid;
   border-color: #000;
+  transform: scale(1.02);
 }
 
-/* Lobby */
 .lobby-host-box {
-  background: #e3f2fd;
   padding: 20px;
   border-radius: 8px;
   text-align: left;
+  color: #fff;
 }
 
 .lobby-controls {
@@ -375,9 +401,16 @@ button:disabled {
   gap: 15px;
 }
 
+.lobby-controls label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1em;
+}
+
 .btn-start-game {
   padding: 15px;
-  background: #2e7d32;
+  background: var(--color-accent-green);
   color: white;
   font-size: 18px;
   width: 100%;
@@ -392,62 +425,67 @@ button:disabled {
   font-size: 18px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
-/* Night Actions */
+/* Night Actions Buttons */
 .action-btn {
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
   margin: 10px 0;
-  padding: 20px;
+  padding: 15px 20px;
   color: white;
   font-size: 18px;
   text-align: left;
   border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .btn-mafia {
   background: #424242;
-  border: 2px solid #d32f2f;
+  border: 2px solid var(--color-mafia-red);
 }
 .btn-mafia.voted {
   background: #b71c1c;
   font-weight: bold;
-  box-shadow: 0 0 10px #d32f2f;
+  box-shadow: 0 0 15px var(--color-mafia-red);
 }
 
-.btn-doctor { background: #2e7d32; }
-.btn-detective { background: #1565c0; }
+.btn-doctor { background: var(--color-accent-green); }
+.btn-detective { background: var(--color-accent-blue); }
 
-/* Day Actions */
+/* Day Actions / Voting */
 .btn-vote {
   display: block;
   width: 100%;
-  margin: 10px 0;
-  padding: 20px;
+  min-width: 120px; 
+  margin: 5px;
+  padding: 15px;
   background: #f5f5f5;
-  border: 2px solid #333;
+  border: 2px solid #ccc;
   color: #333;
   font-weight: bold;
+  border-radius: 8px;
 }
 
 .btn-vote.selected {
-  background: #ff9800;
+  background: var(--color-accent-orange);
   color: white;
   border-color: #e65100;
-  transform: scale(1.02);
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 /* =========================================
-   5. NACHT MODUS (Dynamisch)
+   6. NACHT MODUS & ANIMATIONEN
    ========================================= */
 
+/* Nacht-Modus Wrapper */
 .player-app-container.night-mode {
-  background-color: #0f1016; 
+  background-color: var(--color-bg-dark); 
   color: #e0e0e0;            
-  transition: background-color 1s ease, color 1s ease; 
 }
 
 .night-mode .header-bar {
@@ -458,23 +496,26 @@ button:disabled {
   background-color: #333;
   color: #fff;
 }
+.night-mode .player-list-item {
+    border-bottom-color: #333;
+}
 
-/* --- Voting Styles --- */
-
+/* Voting Bereich */
 .vote-section {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 15px;
+  width: 100%;
 }
 
 .tiebreaker-info {
-  background-color: rgba(255, 165, 0, 0.1); /* Leichtes Orange im Hintergrund */
-  border: 1px solid orange;
+  background-color: rgba(255, 165, 0, 0.15); 
+  border: 2px solid orange;
   padding: 15px;
   border-radius: 8px;
   margin-bottom: 10px;
-  max-width: 90%;
+  width: 100%;
 }
 
 .tie-title {
@@ -483,7 +524,7 @@ button:disabled {
   margin-bottom: 5px;
   font-weight: bold;
   text-transform: uppercase;
-  animation: pulse 2s infinite; /* Optional: Lässt "STICHWAHL" pulsieren */
+  animation: pulse 2s infinite; 
 }
 
 .candidates-grid {
@@ -491,18 +532,27 @@ button:disabled {
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
+  width: 100%;
 }
 
 .vote-confirmed {
-  color: #4caf50; /* Grün */
+  color: var(--color-accent-green);
   font-style: italic;
+  font-weight: bold;
   margin-top: 10px;
 }
 
-/* Animation */
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+.toast-msg {
+    background: #333;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    animation: pulse 1s;
 }
 
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}

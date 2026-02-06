@@ -122,6 +122,7 @@ io.on('connection', (socket) => {
 
     socket.on('voteDay', ({ voterId, targetId }) => {
         dayVotes[voterId] = targetId;
+        io.emit('voteUpdate', dayVotes);
         const livingVoters = Object.values(players).filter(p => p.isAlive && p.playerId !== 'host').length;
         if (Object.keys(dayVotes).length >= livingVoters) {
             evaluateVoting();
@@ -164,14 +165,12 @@ io.on('connection', (socket) => {
 
 
 function transitionToPhase(nextPhase, message, soundKey, delayMs) {
-    // 1. Setze Phase auf TRANSITION (Alle sehen "Schlafen")
     gamePhase = "NIGHT_TRANSITION";
     
-    // 2. Sende Update an alle + Sound/Text Befehl
     io.emit('gameStateUpdate', { gamePhase });
     io.emit('nightAnnouncement', { 
         message: message, 
-        sound: soundKey // z.B. 'night_start', 'mafia_wake', etc.
+        sound: soundKey 
     });
 
     console.log(`Warte ${delayMs}ms vor Phase: ${nextPhase}`);
@@ -181,7 +180,7 @@ function transitionToPhase(nextPhase, message, soundKey, delayMs) {
     gameTimer = setTimeout(() => {
         gamePhase = nextPhase;
         
-        // Wenn die nächste Phase TAG ist, rufen wir startDay auf, sonst processPhaseStart
+
         if (nextPhase === "DAY_ANNOUNCE") {
             startDay();
         } else {
@@ -330,6 +329,7 @@ function startVotingPhase() {
     dayVotes = {}; 
     tieCandidates = []; 
     io.emit('gameStateUpdate', { gamePhase, tieCandidates }); 
+    io.emit('voteUpdate', {});
     io.emit('announcement', "Die Diskussion ist vorbei! Stimmt ab, wen ihr hängen wollt.");
 }
 
@@ -350,7 +350,8 @@ function evaluateVoting() {
             gamePhase = "DAY_TIEBREAKER";
             dayVotes = {}; 
             io.emit('gameStateUpdate', { gamePhase, tieCandidates });
-            io.emit('announcement', `Gleichstand! Stichwahl zwischen ${candidates.length} Spielern.`);
+            io.emit('voteUpdate', {});
+            io.emit('announcement', `Gleichstand! Stichwahl zwischen ${candidates.length} Spielern.`);          
         } else {
             handleNoDeath("Niemand hat gewählt. Niemand stirbt.");
         }

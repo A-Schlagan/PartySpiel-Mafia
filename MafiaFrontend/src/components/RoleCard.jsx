@@ -14,10 +14,10 @@ export default function RoleCard({ role, name }) {
             onTouchStart={startReveal} onTouchEnd={endReveal}
             className={`role-card ${isRevealed ? 'revealed' : ''}`}>
             
-            <h2>Hallo {name}</h2>
+            <h2>DEINE ROLLE</h2>
             <p style={{fontSize: 14}}></p>
             
-            <div style={{fontSize: 20, fontWeight: 'bold', marginTop: 20}}>
+            <div style={{fontSize: 15, fontWeight: 'bold', marginTop: 20}}>
                 {isRevealed ? role : "hier gedrückt halten!"}
             </div>
             
