@@ -30,9 +30,23 @@ function App() {
 
   const playerId = useRef(localStorage.getItem("mafia_pid") || uuidv4());
 
-  const playSound = () => {
-    const audio = new Audio('sounds/sound_morning.mp3');
-    audio.play().catch(e => console.log("Audio Autoplay blockiert", e));
+  const playSound = (soundKey) => {
+    const soundMap = {
+        'morning': 'morning_rooster.wav',        
+        'morning_rooster': 'morning_rooster.wav', 
+        'night_start_sound': 'night_start.mp3',   
+        'mafia_wake': 'mafia_wake.mp3',
+        'mafia_sleep_sound': 'mafia_sleep.mp3',
+        'doctor_wake': 'doctor_wake.mp3',
+        'doctor_sleep_sound': 'doc_sleep.mp3',
+        'detective_wake': 'detective_wake.mp3',
+        'detective_sleep_sound': 'det_sleep.mp3'
+    };
+
+    const fileName = soundMap[soundKey] || `${soundKey}.mp3`; // Fallback
+    const audio = new Audio(`/sounds/${fileName}`);
+    
+    audio.play().catch(e => console.log("Audio Autoplay blockiert (Browser Policy):", e));
   };
 
   const logout = () => {
@@ -40,7 +54,6 @@ function App() {
     window.location.reload();
   };
 
-  // Hilfsfunktion für Host-Aktionen mit SweetAlert
   const handleHostAction = (title, text, actionCallback, confirmColor = '#d33') => {
     Swal.fire({
       title: title,
@@ -67,6 +80,7 @@ function App() {
 
   useEffect(() => {
     if (socket) {
+
       socket.on('connect', () => {
         const name = localStorage.getItem("mafia_name");
         if (name) socket.emit('joinGame', { playerId: playerId.current, name });
@@ -93,21 +107,23 @@ function App() {
 
       socket.on('gameStateUpdate', (data) => {
         if (data.gamePhase) setGamePhase(data.gamePhase);
-
         if (data.players) {
           setPlayers(data.players);
-
           const myServerState = data.players.find(p => p.playerId === playerId.current);
           if (myServerState) {
             setMe(prev => ({ ...prev, ...myServerState }));
           }
         }
-
         if (data.tieCandidates) setTieCandidates(data.tieCandidates);
       });
 
       socket.on('announcement', (msg) => {
         setAnnouncement(msg);
+      });
+
+      socket.on('nightAnnouncement', ({ message, sound }) => {
+          setAnnouncement(message);
+          if(sound) playSound(sound); 
       });
 
       socket.on('dayAnnouncement', ({ title, text }) => {
@@ -136,7 +152,7 @@ function App() {
       });
 
       socket.on('playSound', (type) => {
-        if (type === 'morning') playSound();
+        playSound(type); 
       });
 
       socket.on('gameReset', (updatedPlayerList) => {
@@ -168,23 +184,39 @@ function App() {
       });
     }
 
+    return () => {
+      if (socket) {
+        socket.off('connect');
+        socket.off('recoverState');
+        socket.off('voteUpdate');
+        socket.off('updatePlayerList');
+        socket.off('receiveRole');
+        socket.off('gameStateUpdate');
+        socket.off('announcement');
+        socket.off('nightAnnouncement');
+        socket.off('dayAnnouncement');
+        socket.off('detectiveResult');
+        socket.off('playSound');
+        socket.off('gameReset');
+        socket.off('forceReload');
+      }
+    };
 
   }, [socket, isHostConsole, me]);
+
+
 
   useEffect(() => {
     if (!socket) return;
 
-    // Funktion zum Hinzufügen von Log-Einträgen
     const addLog = (msg, type = 'info') => {
         const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        setGameLog(prev => [{ time, msg, type }, ...prev]); // Neueste oben
+        setGameLog(prev => [{ time, msg, type }, ...prev]); 
     };
 
-    // Höre auf Host-Spezifische Updates (aus server.js Schritt 1)
     socket.on('hostActionUpdate', (update) => {
         if (update.type === 'MAFIA_VOTE') {
             setHostNightData(prev => ({ ...prev, mafiaVotes: update.data }));
-            // Optional: Logge nicht jeden Klick, sonst wird es zu voll
         }
         if (update.type === 'DOC_ACTION') {
             setHostNightData(prev => ({ ...prev, docTarget: update.target }));
@@ -196,18 +228,15 @@ function App() {
         }
     });
 
-    // Logge Phasenwechsel
     socket.on('gameStateUpdate', (data) => {
         if (data.gamePhase) {
             let phaseName = data.gamePhase;
-            // Übersetze Phase für schöneres Log
             if(phaseName === 'NIGHT_MAFIA') phaseName = 'Nacht: Mafia Phase';
             if(phaseName === 'DAY_DISCUSS') phaseName = 'Tag: Diskussion';
             if(phaseName === 'DAY_VOTE') phaseName = 'Tag: Abstimmung';
             
             addLog(`Phasenwechsel: ${phaseName}`, 'phase');
             
-            // Reset Night Data bei neuer Nacht
             if(data.gamePhase === 'NIGHT_TRANSITION') {
                 setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null });
             }
@@ -223,10 +252,7 @@ function App() {
     });
 
     return () => {
-        socket.off('hostActionUpdate');
-        // Andere Listener bleiben im Haupt-Effect oder werden hier auch gecleared, 
-        // aber socket.off ohne Argument entfernt ALLES, also Vorsicht.
-    };
+        socket.off('hostActionUpdate');};    
   }, [socket]);
 
 
@@ -234,7 +260,6 @@ function App() {
   // HOST CONSOLE VIEW (Großbildschirm)
   // ------------------------------------------------------------------
   if (isHostConsole) {
-    // Hilfsfunktion: Namen zu ID finden
     const getName = (id) => players.find(p => p.playerId === id)?.name || "Unbekannt";
 
     return (

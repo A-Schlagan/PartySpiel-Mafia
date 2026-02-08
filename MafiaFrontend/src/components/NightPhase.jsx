@@ -8,22 +8,8 @@ export default function NightPhase({ socket, phase, me, players }) {
     const [announcement, setAnnouncement] = useState("");
 
     useEffect(() => {
-        const handleAnnouncement = ({ message, sound }) => {
+        const handleAnnouncement = ({ message }) => {
             setAnnouncement(message);
-
-            if (sound) {
-                const audio = new Audio(`/sounds/${sound}.mp3`);
-                audio.play().catch(err => {
-                    console.error("Fehler beim Abspielen:", err);
-                });
-                setTimeout(() => {
-                    audio.pause();       
-                    audio.currentTime = 0;
-                }, 5000);
-            }
-            console.log(`[SOUND TRIGGER] Spiele Sound: ${sound}`);
-            
-            setTimeout(() => setAnnouncement(""), 3500);
         };
 
         const handleMafiaUpdate = (votes) => {

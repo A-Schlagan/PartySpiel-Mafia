@@ -26,13 +26,14 @@ io.on('connection', (socket) => {
         if (players[playerId]) {
             players[playerId].socketId = socket.id;
             players[playerId].isOnline = true;
-            socket.emit('recoverState', { me: players[playerId], allPlayers: Object.values(players), gamePhase, settings, tieCandidates });
+            
         } else {
             players[playerId] = {
                 playerId, socketId: socket.id, name, 
                 role: "Spectator", isAlive: true, isOnline: true
             };
         }
+        socket.emit('recoverState', { me: players[playerId], allPlayers: Object.values(players), gamePhase, settings, tieCandidates });
         io.emit('updatePlayerList', Object.values(players));
     });
 
@@ -403,10 +404,10 @@ function checkWinCondition() {
 
     if (mafia === 0 && alive.length > 0) { 
         gamePhase = "GAME_OVER";
-        io.emit('announcement', "DORF GEWINNT! Mafia ist tot.");
+        io.emit('announcement', "DORF GEWINNT!  🥳  Mafia ist tot.");
     } else if (mafia >= citizens && alive.length > 0) {
         gamePhase = "GAME_OVER";
-        io.emit('announcement', "MAFIA GEWINNT! Überzahl erreicht.");
+        io.emit('announcement', "MAFIA GEWINNT!  😈  Überzahl erreicht.");
     }
     if(gamePhase === "GAME_OVER") {
         if(gameTimer) clearTimeout(gameTimer);
