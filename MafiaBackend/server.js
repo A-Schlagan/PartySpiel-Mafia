@@ -48,7 +48,10 @@ io.on('connection', (socket) => {
         if(settings.hasDoctor) roles.push("Arzt");
         if(settings.hasDetective) roles.push("Detektiv");
         while(roles.length < pIds.length) roles.push("Bürger");
-        roles.sort(() => Math.random() - 0.5);
+        for (let i = roles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [roles[i], roles[j]] = [roles[j], roles[i]];
+        } 
 
         pIds.forEach((pid, i) => {
             players[pid].role = roles[i];
@@ -77,11 +80,17 @@ io.on('connection', (socket) => {
         
         const mafiaPlayers = Object.values(players).filter(p => p.role === 'Mafia' && p.isAlive);
         mafiaPlayers.forEach(p => { io.to(p.socketId).emit('mafiaVoteUpdate', nightActions.mafiaVotes); });
+
+        const hostSocket = Object.values(players).find(p => p.playerId === 'host')?.socketId;
+        if(hostSocket) {
+            io.to(hostSocket).emit('hostActionUpdate', { 
+                type: 'MAFIA_VOTE', 
+                data: nightActions.mafiaVotes 
+            });
+        }
         
         const votes = Object.values(nightActions.mafiaVotes);
-        // Wenn alle Mafiosi abgestimmt haben und es einstimmig ist
         if(votes.length === mafiaPlayers.length && votes.every(v => v === votes[0])) {
-            // Kleiner Delay für Dramatik, dann nächste Phase
             if(gameTimer) clearTimeout(gameTimer);
             gameTimer = setTimeout(() => nextNightPhase(), 2000);
         }
@@ -89,14 +98,14 @@ io.on('connection', (socket) => {
 
     socket.on('doctorAction', (targetId) => {
         if(gamePhase !== 'NIGHT_DOCTOR') return;
-        
-        // Sicherheitscheck: Nur lebender Arzt darf Aktion senden
         const actor = players[Object.keys(players).find(id => players[id].socketId === socket.id)];
         if(!actor || !actor.isAlive || actor.role !== 'Arzt') return;
 
         nightActions.doctorTarget = targetId;
+
+        const hostSocket = Object.values(players).find(p => p.playerId === 'host')?.socketId;
+        if(hostSocket) io.to(hostSocket).emit('hostActionUpdate', { type: 'DOC_ACTION', target: targetId });
         
-        // SOFORT weiter, da Arzt gewählt hat
         if(gameTimer) clearTimeout(gameTimer);
         nextNightPhase(); 
     });
@@ -110,12 +119,13 @@ io.on('connection', (socket) => {
         
         nightActions.detectiveCheckDone = true;
 
+        const hostSocket = Object.values(players).find(p => p.playerId === 'host')?.socketId;
+        if(hostSocket) io.to(hostSocket).emit('hostActionUpdate', { type: 'DET_ACTION', target: targetId });
         const target = players[targetId];
         const isEvil = target ? target.role === 'Mafia' : false;
         
         socket.emit('detectiveResult', { name: target ? target.name : "?", isEvil });
         
-        // Zeit geben das Ergebnis zu lesen (z.B. 4 Sekunden), dann weiter
         if(gameTimer) clearTimeout(gameTimer);
         gameTimer = setTimeout(() => nextNightPhase(), 4000);
     });
@@ -125,7 +135,11 @@ io.on('connection', (socket) => {
         io.emit('voteUpdate', dayVotes);
         const livingVoters = Object.values(players).filter(p => p.isAlive && p.playerId !== 'host').length;
         if (Object.keys(dayVotes).length >= livingVoters) {
-            evaluateVoting();
+            if (gameTimer) clearTimeout(gameTimer);
+            io.emit('announcement', "Alle haben gewählt! Ergebnis in 5 Sekunden...");
+            gameTimer = setTimeout(() => {
+                evaluateVoting();
+            }, 5000);
         }
     });
 
@@ -161,6 +175,7 @@ io.on('connection', (socket) => {
         gamePhase = "LOBBY";
         io.emit('forceReload');
     });
+    
 });
 
 
@@ -174,8 +189,6 @@ function transitionToPhase(nextPhase, message, soundKey, delayMs) {
     });
 
     console.log(`Warte ${delayMs}ms vor Phase: ${nextPhase}`);
-
-    // 3. Nach Wartezeit die echte Phase starten
     if(gameTimer) clearTimeout(gameTimer);
     gameTimer = setTimeout(() => {
         gamePhase = nextPhase;
@@ -192,46 +205,39 @@ function transitionToPhase(nextPhase, message, soundKey, delayMs) {
 function startNight() {
     if(gameTimer) clearTimeout(gameTimer);
     
-    // Reset der Aktionen VOR der ersten Pause
     nightActions = { mafiaVotes: {}, doctorTarget: null, detectiveTarget: null, detectiveCheckDone: false };
 
-    // 6 Sekunden warten, bevor Mafia aufwacht
     transitionToPhase(
         "NIGHT_MAFIA", 
-        "Die Nacht bricht herein... Alle schlafen ein.", 
+        "Es wird dunkel... Alle schlafen ein!", 
         "night_start_sound", 
         6000
     );
 }
 
 function nextNightPhase() {
-    if(gameTimer) clearTimeout(gameTimer);
-
-    // Hier entscheiden wir, wer als nächstes dran ist, schalten aber eine Pause dazwischen
-    
+    if(gameTimer) clearTimeout(gameTimer);    
     if(gamePhase === "NIGHT_MAFIA") {
         if(settings.hasDoctor) {
-            // Pause zwischen Mafia und Arzt (z.B. 4 Sekunden)
             transitionToPhase("NIGHT_DOCTOR", "Die Mafia schläft ein...", "mafia_sleep_sound", 4000);
         }
         else if(settings.hasDetective) {
             transitionToPhase("NIGHT_DETECTIVE", "Die Mafia schläft ein...", "mafia_sleep_sound", 4000);
         }
         else { 
-            // Direkt zum Tag (kurze Pause für Spannung)
             transitionToPhase("DAY_ANNOUNCE", "Die Sonne geht bald auf...", "morning_rooster", 4000);
         }
     } 
     else if (gamePhase === "NIGHT_DOCTOR") {
         if(settings.hasDetective) {
-            transitionToPhase("NIGHT_DETECTIVE", "Der Arzt legt sich schlafen...", "doctor_sleep_sound", 4000);
+            transitionToPhase("NIGHT_DETECTIVE", "Der Arzt schläft ein...", "doctor_sleep_sound", 4000);
         }
         else { 
-            transitionToPhase("DAY_ANNOUNCE", "Der Arzt legt sich schlafen...", "doctor_sleep_sound", 4000);
+            transitionToPhase("DAY_ANNOUNCE", "Der Arzt schläft ein...", "doctor_sleep_sound", 4000);
         }
     } 
     else if (gamePhase === "NIGHT_DETECTIVE") {
-        transitionToPhase("DAY_ANNOUNCE", "Der Detektiv ermittelt nicht mehr...", "detective_sleep_sound", 4000);
+        transitionToPhase("DAY_ANNOUNCE", "Der Detektiv schläft ein...", "detective_sleep_sound", 4000);
     }
 }
 
@@ -241,7 +247,7 @@ function processPhaseStart(phase) {
     let wakeUpMsg = "";
     let wakeUpSound = "";
 
-    if (phase === 'NIGHT_MAFIA') { wakeUpMsg = "Mafia erwache!"; wakeUpSound = "mafia_sleep"; }
+    if (phase === 'NIGHT_MAFIA') { wakeUpMsg = "Mafia erwache!"; wakeUpSound = "mafia_wake"; }
     if (phase === 'NIGHT_DOCTOR') { wakeUpMsg = "Arzt erwache!"; wakeUpSound = "doctor_wake"; }
     if (phase === 'NIGHT_DETECTIVE') { wakeUpMsg = "Detektiv erwache!"; wakeUpSound = "detective_wake"; }
 
@@ -258,13 +264,12 @@ function processPhaseStart(phase) {
     const anyAlive = rolePlayers.some(p => p.isAlive);
 
     if (anyAlive) {
-        // Rolle lebt: Timeout 60s
         gameTimer = setTimeout(() => {
             nextNightPhase(); 
         }, 60000);
     } else {
-        // Rolle tot: Zufällige Wartezeit simulieren (damit man nicht merkt, dass Rolle fehlt)
-        const waitTime = Math.floor(Math.random() * 4000) + 6000; // 6-10 Sekunden
+        // Rolle tot: Zufällige Wartezeit simulieren
+        const waitTime = Math.floor(Math.random() * 4000) + 7000;
         console.log(`${phase}: Alle ${activeRole} tot. Simuliere Denkzeit ${waitTime}ms.`);
         
         gameTimer = setTimeout(() => {
@@ -276,11 +281,9 @@ function processPhaseStart(phase) {
 function startDay() {
     gamePhase = "DAY_ANNOUNCE";
     
-    let victimId = Object.values(nightActions.mafiaVotes)[0]; 
-    
+    let victimId = Object.values(nightActions.mafiaVotes)[0];   
     let message = "Es war eine ruhige Nacht. Niemand ist gestorben.";
 
-    // Auswertung Mafia Vote 
     const counts = {};
     Object.values(nightActions.mafiaVotes).forEach(v => counts[v] = (counts[v] || 0) + 1);
     let maxVotes = 0;
@@ -294,7 +297,7 @@ function startDay() {
 
     if (finalVictim) {
         if (finalVictim === nightActions.doctorTarget) {
-            message = `Die Mafia hat angegriffen! Aber der Arzt war zur Stelle. Niemand stirbt.`;
+            message = `Schüsse in der Nacht!!  Aber niemand stirbt.`;
         } else if (players[finalVictim]) {
             players[finalVictim].isAlive = false;
             message = `Guten Morgen... aber nicht für ${players[finalVictim].name}. Wurde in der Nacht ermordet!`;
@@ -330,7 +333,7 @@ function startVotingPhase() {
     tieCandidates = []; 
     io.emit('gameStateUpdate', { gamePhase, tieCandidates }); 
     io.emit('voteUpdate', {});
-    io.emit('announcement', "Die Diskussion ist vorbei! Stimmt ab, wen ihr hängen wollt.");
+    io.emit('announcement', "Stimmt ab, wen ihr hängen wollt.");
 }
 
 function evaluateVoting() {
@@ -377,8 +380,14 @@ function executeHanging(victimId, votesCount) {
 }
 
 function handleNoDeath(message) {
-    io.emit('announcement', message);
-    setTimeout(() => prepareNextRound(), 4000);
+    io.emit('dayAnnouncement', {
+        title: "Kein Ergebnis",
+        text: message
+    });
+    if(gameTimer) clearTimeout(gameTimer);
+    gameTimer = setTimeout(() => {
+        prepareNextRound();
+    }, 5000);
 }
 
 function prepareNextRound() {
@@ -394,7 +403,7 @@ function checkWinCondition() {
 
     if (mafia === 0 && alive.length > 0) { 
         gamePhase = "GAME_OVER";
-        io.emit('announcement', "DORF GEWINNT! Alle Mafiosi sind tot.");
+        io.emit('announcement', "DORF GEWINNT! Mafia ist tot.");
     } else if (mafia >= citizens && alive.length > 0) {
         gamePhase = "GAME_OVER";
         io.emit('announcement', "MAFIA GEWINNT! Überzahl erreicht.");

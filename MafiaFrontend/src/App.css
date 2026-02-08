@@ -1,16 +1,22 @@
+/*MAIN COLORS:
+#B98D72 Chamoisee
+#AE4951 Hippie Pink
+#57233A Wine Berry
+#161B1F Smoky Black
+
 /* =========================================
    1. GLOBALE BASICS & VARIABLEN
    ========================================= */
 :root {
-  --color-bg-light: #f0f0f0;
-  --color-bg-dark: #0f1016;
-  --color-text-main: #333;
+  --color-bg-light: #B98D72;
+  --color-bg-dark: #161B1F;
+  --color-text-main: #5c5454;
   --color-text-light: #ffffff;
   
-  --color-mafia-red: #d32f2f;
+  --color-mafia-red: #AE4951;
   --color-mafia-dark-red: #8b0000;
-  --color-accent-blue: #1976d2;
-  --color-accent-green: #2e7d32;
+  --color-accent-blue: #aabaae;
+  --color-accent-green: #B98D72;
   --color-accent-orange: #ff9800;
   
   --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -47,7 +53,7 @@ button:hover {
 }
 
 button:active {
-  transform: scale(0.98); /* Leichtes Schrumpfen beim Klicken */
+  transform: scale(0.98); 
 }
 
 button:disabled {
@@ -59,151 +65,222 @@ button:disabled {
 /* =========================================
    2. HOST CONSOLE (Großbildschirm)
    ========================================= */
+
+/* Haupt-Container mit Grid-Vorbereitung */
 .host-container {
-  padding: 20px;
-  min-height: 100vh;
-  display: flex;
-  gap: 20px;
-  background-color: #000000;
-  align-items: flex-start;
-  color: var(--color-text-main); /* Reset Textfarbe für Inneres */
+    background-color: #1a1d21; /* Dunkler Hintergrund für Profi-Look */
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
 }
 
+/* --- Header Bereich (Timeline) --- */
+.host-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: #2c3e50;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.host-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.phase-timeline {
+    display: flex;
+    gap: 5px;
+}
+
+.timeline-step {
+    padding: 5px 15px;
+    background: #444;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.timeline-step.active {
+    background: #e67e22; /* Orange Highlight */
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(230, 126, 34, 0.5);
+}
+
+.current-phase-badge {
+    background: #e74c3c;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+/* --- Das 4-Spalten Grid Layout --- */
+.host-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1.5fr 1fr; /* Verhältnis der Spalten */
+    gap: 10px;
+    flex: 1; 
+    height: 85vh; /* Fixe Höhe für Scrollbars innen */
+}
+
+/* Basis-Style für jedes Panel */
 .host-panel {
-  background: rgb(83, 48, 48);
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(114, 107, 107, 0.1);
+    background: #2b2b2b;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; 
+    border: 1px solid #333;
 }
 
-.host-panel-left {
-  flex: 1;
-  min-width: 300px;
-}
-
-.host-panel-right {
-  flex: 2;
-}
-
-.host-panel h2, .host-panel h3, .host-panel h4 {
-    color: #fff; 
-}
-
-.phase-display {
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 15px;
-  border-left: 5px solid blue;
-}
-
-.phase-title {
-  margin: 0;
-  color: #0044cc;
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-.announcement-banner {
-  padding: 15px;
-  background: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffeeba;
-  margin-bottom: 15px;
-  border-radius: 5px;
-  font-weight: bold;
-}
-
-.qr-container {
-  margin-top: 30px;
-  text-align: center;
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-}
-
-/* Host Buttons */
-.btn-emergency {
-  padding: 12px;
-  background: #666;
-  color: white;
-  width: 100%;
-  margin-top: 10px;
-  font-weight: bold;
-}
-
-.danger-zone {
-  margin-top: 40px;
-  border-top: 2px solid #ccc;
-  padding-top: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  align-items: center;
-}
-
-.danger-zone h4 {
-    width: 100%;
+.host-panel h3 {
     margin-top: 0;
+    border-bottom: 2px solid #555;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    color: #B98D72;
+}
+
+/* --- Panel 1: Steuerung & Buttons --- */
+.active-game-controls button {
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.qr-mini {
+    text-align: center;
+    margin-top: 20px;
+    background: white;
+    padding: 10px;
+    border-radius: 5px;
+    color: black;
+}
+
+/* Spezifische Button Farben (aus deinem alten Code übernommen) */
+.btn-emergency {
+    padding: 12px;
+    background: #666;
+    color: white;
+    font-weight: bold;
 }
 
 .btn-restart {
-  padding: 10px 20px;
-  background: var(--color-accent-orange); 
-  color: white;
+    padding: 10px 20px;
+    background: var(--color-accent-orange); 
+    color: white;
 }
 
 .btn-kick {
-  padding: 10px 20px;
-  background: var(--color-mafia-red); 
-  color: white;
+    padding: 10px 20px;
+    background: var(--color-mafia-red); 
+    color: white;
 }
 
-/* Tabelle */
+/* --- Panel 2: Live Info Boxen --- */
+.info-box {
+    background: rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+.night-box { border-left: 3px solid #8e44ad; } 
+.day-box { border-left: 3px solid #f1c40f; }   
+
+.mini-list {
+    padding-left: 20px;
+    margin: 5px 0;
+    font-size: 0.9rem;
+    list-style-type: none; /* Keine Punkte, da wir Icons nutzen */
+}
+
+.vote-tally {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.vote-bar {
+    background: #444;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+/* --- Panel 3: Chronik (Log) --- */
+.log-container {
+    flex: 1;
+    overflow-y: auto; 
+    background: #111;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: monospace; /* Schreibmaschinen-Schrift */
+    font-size: 0.9rem;
+}
+
+.log-entry {
+    margin-bottom: 5px;
+    border-bottom: 1px solid #222;
+    padding-bottom: 2px;
+}
+.log-time { color: #666; margin-right: 8px; }
+.log-msg { color: #ddd; }
+.type-alert .log-msg { color: #ff5555; font-weight: bold; }
+.type-phase .log-msg { color: #f1c40f; }
+.type-action .log-msg { color: #3498db; }
+
+/* --- Panel 4: Spieler Tabelle --- */
+.player-list-scroll {
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Tabelle Styles */
 .player-table {
-  width: 100%; 
-  border-collapse: collapse;
-  background: #ffffff; 
-  border-radius: 8px;
-  overflow: hidden;
+    width: 100%; 
+    border-collapse: collapse;
+    background: #2b2b2b; /* Dunkel angepasst */
+    color: #e0e0e0;
 }
 
 .player-table th {
-  background: #333;
-  color: white;
-  text-align: left;
-  padding: 12px;
+    background: #1a1a1a;
+    color: #aaa;
+    text-align: left;
+    padding: 8px;
+    font-size: 0.8rem;
+    position: sticky;
+    top: 0;
 }
 
 .player-table td {
-  padding: 12px;
-  border-bottom: 1px solid #ddd;
-  color: #333;
-}
-
-.row-alive {
-  background-color: white;
+    padding: 8px;
+    border-bottom: 1px solid #444;
 }
 
 .row-dead {
-  background-color: #ffebeb;
-  color: #999;
+    background-color: #3e2727; /* Dunkelrot für Tote */
+    color: #888;
+    text-decoration: line-through;
 }
 
+/* Badges für Rollen */
 .role-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  background: #555;
-  color: #555; 
-  font-weight: bold;
-  font-size: 0.85em;
-  display: inline-block;
-  width: 120px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    display: inline-block;
 }
-
-.badge-mafia { background: #555; } 
-.badge-arzt { background: #555; }
-.badge-detektiv { background: #555; }
-
+.badge-mafia { background: #c0392b; color: white; }
+.badge-arzt { background: #27ae60; color: white; }
+.badge-detektiv { background: #2980b9; color: white; }
+.badge-bürger { background: #7f8c8d; color: white; }
 
 /* =========================================
    3. MOBILE PLAYER VIEW (Login Screen)
@@ -250,15 +327,18 @@ button:disabled {
   font-size: 16px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  background-color: rgba(0, 0, 0, 0.7); 
+  background-color: rgba(0, 0, 0, 0.2); 
   color: white;
   outline: none;
 }
 
 .btn-login {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
   flex: 1; 
   padding: 15px;
-  background: #ce8989;
+  background: #AE4951;
   color: white;
   font-weight: bold;
   white-space: nowrap; 
@@ -278,9 +358,9 @@ button:disabled {
 }
 
 .btn-host-login {
-  background: rgba(0,0,0,0.5); 
-  border: 1px solid #da4b4b;
-  color: #da4b4b;
+  background: #161B1F; 
+  border: 1px solid #B98D72;
+  color: #B98D72;
   padding: 10px 20px;
   border-radius: 20px;
   font-size: 14px;
@@ -301,12 +381,13 @@ button:disabled {
 
 .player-app-container {
   padding: 20px;
+  padding-top: 50px;
   max-width: 600px;
   margin: 0 auto;
   text-align: center;
   position: relative;
   min-height: 100vh;
-  background: #e9e0e0;
+  background: #e3d6bf;
   transition: background-color 1s ease, color 1s ease;
 }
 
@@ -322,11 +403,11 @@ button:disabled {
   z-index: 10; 
 }
 
-.header-bar {
+/*.header-bar {
   margin-bottom: 60px;
-  border-bottom: 3px solid #af5151;
+  border-bottom: 3px solid #AE4951;
   margin-top: 20px;
-}
+}*/
 
 .btn-big-action {
   padding: 25px;
@@ -349,7 +430,7 @@ button:disabled {
   right: 0;
   bottom: 0;
   background: rgba(0,0,0,0.9);
-  color: #ff5252;
+  color: #AE4951;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -368,23 +449,20 @@ button:disabled {
   -webkit-user-select: none;
   user-select: none;
   padding: 40px 20px;
-  border: 4px dashed #555;
   border-radius: 15px;
   margin: 20px auto;
-  width: 90%;
+  width: 100%;
   max-width: 350px;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  background: #121646; 
-  color: #8c9eff;
+  background: #57233A; 
+  color: #B98D72;
   touch-action: manipulation;
   cursor: pointer;
 }
 
 .role-card.revealed {
-  background: #121646;
-  color: #8c9eff;
-  border-style: solid;
-  border-color: #000;
+  background: #57233A;
+  color: #B98D72;
   transform: scale(1.02);
 }
 
@@ -420,7 +498,7 @@ button:disabled {
 
 .player-list-item {
   padding: 12px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #ae4951;
   text-align: left;
   font-size: 18px;
   display: flex;
@@ -543,16 +621,49 @@ button:disabled {
 }
 
 .toast-msg {
-    background: #333;
-    color: white;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-    animation: pulse 1s;
+  position: fixed;
+  top: 15%; 
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 400px;
+  background: rgba(0, 0, 0, 0.9); 
+  color: #ffd700;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  border: 1px solid #555;
+  z-index: 9999;
+  animation: fadeInOut 3s forwards;
 }
 
 @keyframes pulse {
   0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.05); opacity: 0.8; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -20px); }
+    10% { opacity: 1; transform: translate(-50%, 0); }
+    90% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -20px); }
+}
+
+/* Pulsierender Text für die Lobby */
+@keyframes text-breathe {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.pulse-text {
+  animation: text-breathe 2s infinite ease-in-out;
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #AE4951; 
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }

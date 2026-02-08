@@ -25,6 +25,8 @@ function App() {
   const [isHostConsole, setIsHostConsole] = useState(false);
   const [currentVotes, setCurrentVotes] = useState({});
   const [roleConfirmed, setRoleConfirmed] = useState(false);
+  const [gameLog, setGameLog] = useState([]);
+  const [hostNightData, setHostNightData] = useState({ mafiaVotes: {}, docTarget: null, detTarget: null });
 
   const playerId = useRef(localStorage.getItem("mafia_pid") || uuidv4());
 
@@ -165,109 +167,230 @@ function App() {
         window.location.reload();
       });
     }
+
+
   }, [socket, isHostConsole, me]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // Funktion zum Hinzufügen von Log-Einträgen
+    const addLog = (msg, type = 'info') => {
+        const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        setGameLog(prev => [{ time, msg, type }, ...prev]); // Neueste oben
+    };
+
+    // Höre auf Host-Spezifische Updates (aus server.js Schritt 1)
+    socket.on('hostActionUpdate', (update) => {
+        if (update.type === 'MAFIA_VOTE') {
+            setHostNightData(prev => ({ ...prev, mafiaVotes: update.data }));
+            // Optional: Logge nicht jeden Klick, sonst wird es zu voll
+        }
+        if (update.type === 'DOC_ACTION') {
+            setHostNightData(prev => ({ ...prev, docTarget: update.target }));
+            addLog("Der Arzt hat ein Ziel gewählt.", 'action');
+        }
+        if (update.type === 'DET_ACTION') {
+            setHostNightData(prev => ({ ...prev, detTarget: update.target }));
+            addLog("Der Detektiv hat jemanden untersucht.", 'action');
+        }
+    });
+
+    // Logge Phasenwechsel
+    socket.on('gameStateUpdate', (data) => {
+        if (data.gamePhase) {
+            let phaseName = data.gamePhase;
+            // Übersetze Phase für schöneres Log
+            if(phaseName === 'NIGHT_MAFIA') phaseName = 'Nacht: Mafia Phase';
+            if(phaseName === 'DAY_DISCUSS') phaseName = 'Tag: Diskussion';
+            if(phaseName === 'DAY_VOTE') phaseName = 'Tag: Abstimmung';
+            
+            addLog(`Phasenwechsel: ${phaseName}`, 'phase');
+            
+            // Reset Night Data bei neuer Nacht
+            if(data.gamePhase === 'NIGHT_TRANSITION') {
+                setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null });
+            }
+        }
+    });
+
+    socket.on('announcement', (msg) => {
+        addLog(msg, 'alert');
+    });
+    
+    socket.on('dayAnnouncement', (data) => {
+        addLog(`${data.title}: ${data.text}`, 'alert');
+    });
+
+    return () => {
+        socket.off('hostActionUpdate');
+        // Andere Listener bleiben im Haupt-Effect oder werden hier auch gecleared, 
+        // aber socket.off ohne Argument entfernt ALLES, also Vorsicht.
+    };
+  }, [socket]);
 
 
   // ------------------------------------------------------------------
   // HOST CONSOLE VIEW (Großbildschirm)
   // ------------------------------------------------------------------
   if (isHostConsole) {
+    // Hilfsfunktion: Namen zu ID finden
+    const getName = (id) => players.find(p => p.playerId === id)?.name || "Unbekannt";
+
     return (
       <div className="host-container">
-
-        {/* LINKS: Steuerung */}
-        <div className="host-panel host-panel-left">
-          <h2>Spielleiter Zentrale 🖥️</h2>
-          <div className="phase-display">
-            <h3 className="phase-title">Phase: {gamePhase}</h3>
-            <small style={{ color: '#666' }}>Spiel läuft automatisch...</small>
-          </div>
-
-          {announcement && <div className="announcement-banner">📢 {announcement}</div>}
-
-          <hr />
-
-          {gamePhase === 'LOBBY' && (
-            <Lobby socket={socket} players={players} isHost={true} />
-          )}
-
-          {gamePhase === 'LOBBY' && (
-            <div className="qr-container">
-              <QRCode value={CLIENT_URL} size={100} />
-              <p>{CLIENT_URL}</p>
+        
+        {/* HEADER: Phasen-Fortschrittsanzeige */}
+        <div className="host-header">
+            <h1>🕵️ SPIELLEITER ZENTRALE</h1>
+            <div className="phase-timeline">
+                {['LOBBY', 'NIGHT', 'DAY', 'VOTE'].map(step => (
+                    <div key={step} className={`timeline-step ${gamePhase.includes(step) ? 'active' : ''}`}>
+                        {step}
+                    </div>
+                ))}
             </div>
-          )}
-
-          {/* Manuelle Eingriffe */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}>
-            {gamePhase.startsWith('DAY_') && gamePhase !== 'DAY_ANNOUNCE' && (
-              <div style={{ border: '1px solid #ccc', padding: 10, borderRadius: 5 }}>
-                <h4>Notfall Eingriff</h4>
-                <button onClick={() => socket.emit('forcePhaseNext')} className="btn-emergency">
-                  ⏩ Timer überspringen
-                </button>
-              </div>
-            )}
-
-            <div className="danger-zone">
-              <h4>Gefahrenzone</h4>
-
-              {/* ERSATZ FÜR CONFIRM - RESET */}
-              <button
-                onClick={() => handleHostAction(
-                  "Spiel neu starten?",
-                  "Der aktuelle Fortschritt geht verloren und alle Rollen werden zurückgesetzt.",
-                  () => socket.emit('resetGame')
-                )}
-                className="btn-restart"
-              >
-                🔄 Runde Neu Starten
-              </button>
-
-              {/* ERSATZ FÜR CONFIRM - KICK ALL */}
-              <button
-                onClick={() => handleHostAction(
-                  "ALLE KICKEN?",
-                  "Alle Spieler werden vom Server getrennt. Das ist unwiderruflich.",
-                  () => socket.emit('kickAll'),
-                  '#ff0000' // Extra rot
-                )}
-                className="btn-kick"
-              >
-                ⚠️ ALLE KICKEN
-              </button>
+            <div className="current-phase-badge">
+                AKTUELL: {gamePhase}
             </div>
-          </div>
         </div>
 
-        {/* RECHTS: Spieler Übersicht */}
-        <div className="host-panel host-panel-right">
-          <h3>Spieler Übersicht ({players.length})</h3>
-          <table className="player-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Rolle</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {players.map(p => (
-                <tr key={p.playerId} className={p.isAlive ? 'row-alive' : 'row-dead'}>
-                  <td style={{ fontWeight: 'bold' }}>{p.name}</td>
-                  <td>
-                    <span className={`role-badge ${p.role === 'Mafia' ? 'badge-mafia' :
-                      (p.role === 'Arzt' ? 'badge-arzt' :
-                        (p.role === 'Detektiv' ? 'badge-detektiv' : 'badge-default'))
-                      }`}>
-                      {p.role}
-                    </span>
-                  </td>
-                  <td>{p.isAlive ? "✅ Lebt" : "💀 Tot"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="host-grid">
+            
+            {/* SPALTE 1: Steuerung & Lobby */}
+            <div className="host-panel host-controls">
+                <h3>🕹️ Steuerung</h3>
+                {gamePhase === 'LOBBY' ? (
+                    <>
+                        <Lobby socket={socket} players={players} isHost={true} />
+                        <div className="qr-mini">
+                            <QRCode value={CLIENT_URL} size={80} />
+                            <small>{CLIENT_URL}</small>
+                        </div>
+                    </>
+                ) : (
+                    <div className="active-game-controls">
+                        <button onClick={() => socket.emit('forcePhaseNext')} className="btn-emergency">
+                            ⏩ Phase überspringen
+                        </button>
+                        <hr />
+                        <button 
+                            onClick={() => handleHostAction("Neustart?", "Alles wird gelöscht.", () => socket.emit('resetGame'))} 
+                            className="btn-restart">
+                            🔄 Reset
+                        </button>
+                        <button 
+                            onClick={() => handleHostAction("KICK ALL?", "Alle fliegen raus.", () => socket.emit('kickAll'), '#ff0000')} 
+                            className="btn-kick">
+                            ⚠️ Kick All
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* SPALTE 2: Live Informationen (Nacht & Tag) */}
+            <div className="host-panel host-live-info">
+                <h3>📊 Live Status</h3>
+                
+                {/* NACHT STATUS */}
+                {gamePhase.startsWith('NIGHT') && (
+                    <div className="info-box night-box">
+                        <h4>🌙 Nacht Aktionen</h4>
+                        <div>
+                            <strong>Mafia Votes:</strong>
+                            <ul className="mini-list">
+                                {Object.entries(hostNightData.mafiaVotes).map(([voterId, targetId]) => (
+                                    <li key={voterId}>
+                                        {getName(voterId)} 🔪 will töten: <span style={{color:'red'}}>{getName(targetId)}</span>
+                                    </li>
+                                ))}
+                                {Object.keys(hostNightData.mafiaVotes).length === 0 && <li>Noch keine Stimmen...</li>}
+                            </ul>
+                        </div>
+                        <div style={{marginTop: 10}}>
+                            <strong>Arzt:</strong> {hostNightData.docTarget ? `Schützt ${getName(hostNightData.docTarget)}` : "Schläft/Überlegt..."}
+                        </div>
+                        <div>
+                            <strong>Detektiv:</strong> {hostNightData.detTarget ? `Prüft ${getName(hostNightData.detTarget)}` : "Schläft/Überlegt..."}
+                        </div>
+                    </div>
+                )}
+
+                {/* TAG STATUS (Voting) */}
+                {(gamePhase.startsWith('DAY') || gamePhase === 'DAY_VOTE') && (
+                    <div className="info-box day-box">
+                        <h4>☀️ Tag Aktionen</h4>
+                        <p>Stimmen abgegeben: {Object.keys(currentVotes).length} / {players.filter(p => p.isAlive && p.playerId !== 'host').length}</p>
+                        {/* Wer führt gerade? Simple Berechnung für Host View */}
+                        <div className="vote-tally">
+                            {(() => {
+                                const counts = {};
+                                Object.values(currentVotes).forEach(t => counts[t] = (counts[t] || 0) + 1);
+                                return Object.entries(counts).map(([targetId, count]) => (
+                                    <div key={targetId} className="vote-bar">
+                                        <span>{getName(targetId)}:</span> 
+                                        <strong>{count}</strong>
+                                    </div>
+                                ));
+                            })()}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* SPALTE 3: Chronik / Log */}
+            <div className="host-panel host-log">
+                <h3>📜 Chronik</h3>
+                <div className="log-container">
+                    {gameLog.length === 0 && <p style={{color:'#999'}}>Spielprotokoll leer...</p>}
+                    {gameLog.map((entry, i) => (
+                        <div key={i} className={`log-entry type-${entry.type}`}>
+                            <span className="log-time">[{entry.time}]</span> 
+                            <span className="log-msg">{entry.msg}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* SPALTE 4: Spieler Liste (Kompakt) */}
+            <div className="host-panel host-players">
+                <h3>👥 Spieler ({players.length})</h3>
+                <div className="player-list-scroll">
+                    <table className="player-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Rolle</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {players.map(p => {
+                                // Zusatzinfo: Hat der Spieler schon abgestimmt?
+                                const hasVoted = gamePhase.startsWith('DAY') && currentVotes[p.playerId];
+                                const isMafiaVoter = gamePhase === 'NIGHT_MAFIA' && hostNightData.mafiaVotes[p.playerId];
+                                
+                                return (
+                                    <tr key={p.playerId} className={p.isAlive ? 'row-alive' : 'row-dead'}>
+                                        <td style={{ fontWeight: 'bold' }}>
+                                            {p.name}
+                                        </td>
+                                        <td>
+                                            <span className={`role-badge badge-${p.role.toLowerCase()}`}>{p.role}</span>
+                                        </td>
+                                        <td>
+                                            {p.isAlive ? (
+                                                (hasVoted || isMafiaVoter) ? "✅ Fertig" : "⏳ Denkt..."
+                                            ) : "💀 Tot"}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
       </div>
     );
@@ -326,16 +449,17 @@ function App() {
   return (
     <div className={`player-app-container ${isNight ? 'night-mode' : ''}`}>
       <button onClick={logout} className="btn-logout">❌</button>
-      <div className="header-bar">
+      
+      {/* <div className="header-bar">
 
         <h4>Mafia - Phase: {gamePhase}</h4>
         <h4>{me.role !== 'Spectator' && <p>Du bist: <strong>{me.name}</strong></p>}</h4>
 
-      </div>
+      </div>*/}
 
       {gamePhase === 'LOBBY' && (
         <div style={{ marginBottom: 30 }}>
-          <p>Warte auf Spielstart...</p>
+          <p className="pulse-text">Warte auf Spielstart...</p>
           <Lobby socket={socket} players={players} isHost={false} />
         </div>
       )}
@@ -352,12 +476,13 @@ function App() {
             }}
             className="btn-big-action bg-blue"
             style={{
-              backgroundColor: roleConfirmed ? '#7f8c8d' : '#1976d2',
+              backgroundColor: roleConfirmed ? '' : '#69756c',
               cursor: roleConfirmed ? 'default' : 'pointer',
-              transform: roleConfirmed ? 'none' : '' 
+              transform: roleConfirmed ? 'none' : '' ,
+              color: '#57233a'
             }}
           >
-            {roleConfirmed ? "WARTE AUF ANDERE SPIELER..." : "ICH HABE MEINE ROLLE GESEHEN (BEREIT) "}
+            {roleConfirmed ? "WARTE AUF ANDERE SPIELER..." : "WEITER"}
           </button>
         </div>
       )}

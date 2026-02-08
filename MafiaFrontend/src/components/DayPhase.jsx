@@ -19,9 +19,14 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
         candidates = candidates.filter(p => tieCandidates.includes(p.playerId));
     }
 
+    const votesAgainstMe = Object.entries(currentVotes || {})
+        .filter(([_, targetId]) => targetId === me.playerId) 
+        .map(([voterId]) => {
+            const p = players.find(pl => pl.playerId === voterId);
+            return p ? p.name : 'Unbekannt';
+        });
+
     const getVotersForCandidate = (candidateId) => {
-        // currentVotes ist z.B. { "spielerA_ID": "spielerB_ID", "spielerC_ID": "spielerB_ID" }
-        // Wir suchen alle Keys (Wähler), deren Value == candidateId ist
         const voters = Object.entries(currentVotes || {})
             .filter(([voterId, targetId]) => targetId === candidateId)
             .map(([voterId]) => {
@@ -45,7 +50,7 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
                         <div className="tiebreaker-info">
                             <h3 className="tie-title">STICHWAHL!</h3>
                             <p>
-                                Es gab einen Gleichstand. Ihr müsst euch zwischen den markierten Spielern entscheiden. 
+                                Gleichstand! Ihr müsst euch zwischen den markierten Spielern entscheiden. 
                                 <br/>
                                 <small>Bei erneutem Gleichstand stirbt niemand.</small>
                             </p>
@@ -76,6 +81,24 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
                                 </button>
                             );
                         })}
+                    </div>
+
+                    {/* --- Stimmen gegen MICH --- */}
+                    <div style={{ 
+                        marginTop: '10px', 
+                        padding: '10px', 
+                        backgroundColor: '#ffebee', 
+                        border: '1px solid #ef9a9a', 
+                        borderRadius: '8px',
+                        color: '#ae4951'
+                    }}>
+                        <p style={{margin: 0, fontWeight: 'bold', color: '#161B1F'}}>Gegen DICH haben gestimmt:</p>
+                        <div style={{marginTop: '5px', fontSize: '1.1rem'}}>
+                            {votesAgainstMe.length > 0 
+                                ? `😒 ${votesAgainstMe.join(', ')}` 
+                                : <span style={{color: '#161B1F', fontStyle: 'italic'}}>😎 Noch niemand...</span>
+                            }
+                        </div>
                     </div>
                     
                     {votedFor && <p className="vote-confirmed">Stimme abgegeben.</p>}
