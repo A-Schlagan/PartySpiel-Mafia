@@ -1,11 +1,16 @@
 // components/NightPhase.jsx
 import React, { useState, useEffect } from 'react';
 
-export default function NightPhase({ socket, phase, me, players }) {
+export default function NightPhase({ socket, phase, me, players, duration}) {
     const [mafiaVotes, setMafiaVotes] = useState({});
     const [hasActed, setHasActed] = useState(false);
-    
     const [announcement, setAnnouncement] = useState("");
+
+    const TimerBar = ({ duration }) => (
+    <div className="timer-container">
+        <div className="timer-bar" style={{ animationDuration: `${duration}ms` }}></div>
+    </div>
+    );
 
     useEffect(() => {
         const handleAnnouncement = ({ message }) => {
@@ -56,6 +61,7 @@ export default function NightPhase({ socket, phase, me, players }) {
         const otherMafias = players.filter(p => p.role === 'Mafia' && p.playerId !== me.playerId);
         return (
             <div>
+                <TimerBar duration={duration} />
                 {announcement && <div className="toast-msg">{announcement}</div>}
                 <h2 style={{color:'red'}}>MAFIA TREFFEN</h2>
                 
@@ -78,12 +84,14 @@ export default function NightPhase({ socket, phase, me, players }) {
                     )
                 })}
             </div>
+
         );
     }
 
     if (phase === 'NIGHT_DOCTOR' && me.role === 'Arzt' && me.isAlive) {
         return (
             <div>
+                <TimerBar duration={duration} />
                 {announcement && <div className="toast-msg">{announcement}</div>}
                 <h2 style={{color:'green'}}>ARZT</h2>
                 <p>Wen möchtest du schützen?</p>
@@ -101,6 +109,7 @@ export default function NightPhase({ socket, phase, me, players }) {
     if (phase === 'NIGHT_DETECTIVE' && me.role === 'Detektiv' && me.isAlive) {
         return (
             <div>
+                <TimerBar duration={duration} />
                 {announcement && <div className="toast-msg">{announcement}</div>}
                 <h2 style={{color:'blue'}}>DETEKTIV</h2>
                 <p>Wen untersuchen?</p>

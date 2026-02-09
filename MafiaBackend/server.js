@@ -10,6 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 const DISCUSSION_TIME_MS = 10000; 
+const NIGHT_PHASE_TIME_MS = 30000;
 
 let players = {}; 
 let settings = { mafiaCount: 1, hasDoctor: true, hasDetective: true };
@@ -243,7 +244,7 @@ function nextNightPhase() {
 }
 
 function processPhaseStart(phase) {
-    io.emit('gameStateUpdate', { gamePhase: phase });
+    io.emit('gameStateUpdate', { gamePhase: phase, duration: NIGHT_PHASE_TIME_MS });
 
     let wakeUpMsg = "";
     let wakeUpSound = "";
@@ -267,7 +268,7 @@ function processPhaseStart(phase) {
     if (anyAlive) {
         gameTimer = setTimeout(() => {
             nextNightPhase(); 
-        }, 60000);
+        }, NIGHT_PHASE_TIME_MS);
     } else {
         // Rolle tot: Zufällige Wartezeit simulieren
         const waitTime = Math.floor(Math.random() * 4000) + 7000;

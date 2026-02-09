@@ -651,7 +651,6 @@ button:disabled {
     100% { opacity: 0; transform: translate(-50%, -20px); }
 }
 
-/* Pulsierender Text für die Lobby */
 @keyframes text-breathe {
   0% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(0.98); }
@@ -666,4 +665,35 @@ button:disabled {
   margin-bottom: 20px;
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+
+/* =========================================
+   7. TIMER ANIMATION
+   ========================================= */
+
+.timer-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background-color: #333; /* Hintergrund des Balkens */
+    z-index: 10000;
+}
+
+.timer-bar {
+    height: 100%;
+    background-color: #ff0000; /* Leuchtendes Rot */
+    width: 100%;
+    transform-origin: left;
+    animation-name: shrinkTimer;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards; /* Bleibt am Ende leer stehen */
+    box-shadow: 0 0 10px #ff0000;
+}
+
+@keyframes shrinkTimer {
+    from { width: 100%; background-color: #00ff00; /* Startet Grün (optional) */ }
+    50% { background-color: #ffff00; } /* Wird Gelb */
+    to { width: 0%; background-color: #ff0000; /* Endet Rot */ }
 }

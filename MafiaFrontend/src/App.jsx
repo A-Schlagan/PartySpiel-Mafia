@@ -27,25 +27,32 @@ function App() {
   const [roleConfirmed, setRoleConfirmed] = useState(false);
   const [gameLog, setGameLog] = useState([]);
   const [hostNightData, setHostNightData] = useState({ mafiaVotes: {}, docTarget: null, detTarget: null });
+  const [nightReady, setNightReady] = useState(false);
+  const [phaseDuration, setPhaseDuration] = useState(0);
 
   const playerId = useRef(localStorage.getItem("mafia_pid") || uuidv4());
+  const wasAlive = useRef(true);
+
+  const triggerVibration = (pattern) => {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  };
 
   const playSound = (soundKey) => {
     const soundMap = {
-        'morning': 'morning_rooster.wav',        
-        'morning_rooster': 'morning_rooster.wav', 
-        'night_start_sound': 'night_start.mp3',   
-        'mafia_wake': 'mafia_wake.mp3',
-        'mafia_sleep_sound': 'mafia_sleep.mp3',
-        'doctor_wake': 'doctor_wake.mp3',
-        'doctor_sleep_sound': 'doc_sleep.mp3',
-        'detective_wake': 'detective_wake.mp3',
-        'detective_sleep_sound': 'det_sleep.mp3'
+      'morning': 'morning_rooster.wav',
+      'morning_rooster': 'morning_rooster.wav',
+      'night_start_sound': 'night_start.mp3',
+      'mafia_wake': 'mafia_wake.mp3',
+      'mafia_sleep_sound': 'mafia_sleep.mp3',
+      'doctor_wake': 'doctor_wake.mp3',
+      'doctor_sleep_sound': 'doc_sleep.mp3',
+      'detective_wake': 'detective_wake.mp3',
+      'detective_sleep_sound': 'det_sleep.mp3'
     };
 
     const fileName = soundMap[soundKey] || `${soundKey}.mp3`; // Fallback
     const audio = new Audio(`/sounds/${fileName}`);
-    
+
     audio.play().catch(e => console.log("Audio Autoplay blockiert (Browser Policy):", e));
   };
 
@@ -79,6 +86,28 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (me) {
+      if (wasAlive.current === true && me.isAlive === false) {
+        console.log("VIBRATION: Tod erkannt!");
+        if (navigator.vibrate) navigator.vibrate([2000]);
+      }
+      wasAlive.current = me.isAlive;
+    }
+  }, [me]);
+
+  useEffect(() => {
+    if (gamePhase === 'GAME_OVER') {
+      triggerVibration([2000]);
+    }
+  }, [gamePhase]);
+
+  useEffect(() => {
+    if (gamePhase !== 'READY_CHECK') {
+      setNightReady(false);
+    }
+  }, [gamePhase]);
+
+  useEffect(() => {
     if (socket) {
 
       socket.on('connect', () => {
@@ -107,6 +136,11 @@ function App() {
 
       socket.on('gameStateUpdate', (data) => {
         if (data.gamePhase) setGamePhase(data.gamePhase);
+        if (data.duration) {
+             setPhaseDuration(data.duration);
+        } else {
+             setPhaseDuration(0);
+        }
         if (data.players) {
           setPlayers(data.players);
           const myServerState = data.players.find(p => p.playerId === playerId.current);
@@ -122,8 +156,8 @@ function App() {
       });
 
       socket.on('nightAnnouncement', ({ message, sound }) => {
-          setAnnouncement(message);
-          if(sound) playSound(sound); 
+        setAnnouncement(message);
+        if (sound) playSound(sound);
       });
 
       socket.on('dayAnnouncement', ({ title, text }) => {
@@ -143,16 +177,19 @@ function App() {
 
       socket.on('detectiveResult', (data) => {
         if (!isHostConsole) {
+          const messageHtml = data.isEvil
+            ? '<div class="pulse-text">MAFIA! 😈</div>'
+            : '<div class="pulse-text style="color: #28a745">Bürger. 😇</div>';
           Swal.fire({
             title: 'Detektiv Ergebnis',
-            text: data.isEvil ? "Mafia!" : "Bürger.",
+            html: messageHtml,
             confirmButtonText: 'Verstanden'
           });
         }
       });
 
       socket.on('playSound', (type) => {
-        playSound(type); 
+        playSound(type);
       });
 
       socket.on('gameReset', (updatedPlayerList) => {
@@ -210,49 +247,50 @@ function App() {
     if (!socket) return;
 
     const addLog = (msg, type = 'info') => {
-        const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        setGameLog(prev => [{ time, msg, type }, ...prev]); 
+      const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setGameLog(prev => [{ time, msg, type }, ...prev]);
     };
 
     socket.on('hostActionUpdate', (update) => {
-        if (update.type === 'MAFIA_VOTE') {
-            setHostNightData(prev => ({ ...prev, mafiaVotes: update.data }));
-        }
-        if (update.type === 'DOC_ACTION') {
-            setHostNightData(prev => ({ ...prev, docTarget: update.target }));
-            addLog("Der Arzt hat ein Ziel gewählt.", 'action');
-        }
-        if (update.type === 'DET_ACTION') {
-            setHostNightData(prev => ({ ...prev, detTarget: update.target }));
-            addLog("Der Detektiv hat jemanden untersucht.", 'action');
-        }
+      if (update.type === 'MAFIA_VOTE') {
+        setHostNightData(prev => ({ ...prev, mafiaVotes: update.data }));
+      }
+      if (update.type === 'DOC_ACTION') {
+        setHostNightData(prev => ({ ...prev, docTarget: update.target }));
+        addLog("Der Arzt hat ein Ziel gewählt.", 'action');
+      }
+      if (update.type === 'DET_ACTION') {
+        setHostNightData(prev => ({ ...prev, detTarget: update.target }));
+        addLog("Der Detektiv hat jemanden untersucht.", 'action');
+      }
     });
 
     socket.on('gameStateUpdate', (data) => {
-        if (data.gamePhase) {
-            let phaseName = data.gamePhase;
-            if(phaseName === 'NIGHT_MAFIA') phaseName = 'Nacht: Mafia Phase';
-            if(phaseName === 'DAY_DISCUSS') phaseName = 'Tag: Diskussion';
-            if(phaseName === 'DAY_VOTE') phaseName = 'Tag: Abstimmung';
-            
-            addLog(`Phasenwechsel: ${phaseName}`, 'phase');
-            
-            if(data.gamePhase === 'NIGHT_TRANSITION') {
-                setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null });
-            }
+      if (data.gamePhase) {
+        let phaseName = data.gamePhase;
+        if (phaseName === 'NIGHT_MAFIA') phaseName = 'Nacht: Mafia Phase';
+        if (phaseName === 'DAY_DISCUSS') phaseName = 'Tag: Diskussion';
+        if (phaseName === 'DAY_VOTE') phaseName = 'Tag: Abstimmung';
+
+        addLog(`Phasenwechsel: ${phaseName}`, 'phase');
+
+        if (data.gamePhase === 'NIGHT_TRANSITION') {
+          setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null });
         }
+      }
     });
 
     socket.on('announcement', (msg) => {
-        addLog(msg, 'alert');
+      addLog(msg, 'alert');
     });
-    
+
     socket.on('dayAnnouncement', (data) => {
-        addLog(`${data.title}: ${data.text}`, 'alert');
+      addLog(`${data.title}: ${data.text}`, 'alert');
     });
 
     return () => {
-        socket.off('hostActionUpdate');};    
+      socket.off('hostActionUpdate');
+    };
   }, [socket]);
 
 
@@ -264,157 +302,157 @@ function App() {
 
     return (
       <div className="host-container">
-        
+
         {/* HEADER: Phasen-Fortschrittsanzeige */}
         <div className="host-header">
-            <h1>🕵️ SPIELLEITER ZENTRALE</h1>
-            <div className="phase-timeline">
-                {['LOBBY', 'NIGHT', 'DAY', 'VOTE'].map(step => (
-                    <div key={step} className={`timeline-step ${gamePhase.includes(step) ? 'active' : ''}`}>
-                        {step}
-                    </div>
-                ))}
-            </div>
-            <div className="current-phase-badge">
-                AKTUELL: {gamePhase}
-            </div>
+          <h1>🕵️ SPIELLEITER ZENTRALE</h1>
+          <div className="phase-timeline">
+            {['LOBBY', 'NIGHT', 'DAY', 'VOTE'].map(step => (
+              <div key={step} className={`timeline-step ${gamePhase.includes(step) ? 'active' : ''}`}>
+                {step}
+              </div>
+            ))}
+          </div>
+          <div className="current-phase-badge">
+            AKTUELL: {gamePhase}
+          </div>
         </div>
 
         <div className="host-grid">
-            
-            {/* SPALTE 1: Steuerung & Lobby */}
-            <div className="host-panel host-controls">
-                <h3>🕹️ Steuerung</h3>
-                {gamePhase === 'LOBBY' ? (
-                    <>
-                        <Lobby socket={socket} players={players} isHost={true} />
-                        <div className="qr-mini">
-                            <QRCode value={CLIENT_URL} size={80} />
-                            <small>{CLIENT_URL}</small>
-                        </div>
-                    </>
-                ) : (
-                    <div className="active-game-controls">
-                        <button onClick={() => socket.emit('forcePhaseNext')} className="btn-emergency">
-                            ⏩ Phase überspringen
-                        </button>
-                        <hr />
-                        <button 
-                            onClick={() => handleHostAction("Neustart?", "Alles wird gelöscht.", () => socket.emit('resetGame'))} 
-                            className="btn-restart">
-                            🔄 Reset
-                        </button>
-                        <button 
-                            onClick={() => handleHostAction("KICK ALL?", "Alle fliegen raus.", () => socket.emit('kickAll'), '#ff0000')} 
-                            className="btn-kick">
-                            ⚠️ Kick All
-                        </button>
-                    </div>
-                )}
-            </div>
 
-            {/* SPALTE 2: Live Informationen (Nacht & Tag) */}
-            <div className="host-panel host-live-info">
-                <h3>📊 Live Status</h3>
-                
-                {/* NACHT STATUS */}
-                {gamePhase.startsWith('NIGHT') && (
-                    <div className="info-box night-box">
-                        <h4>🌙 Nacht Aktionen</h4>
-                        <div>
-                            <strong>Mafia Votes:</strong>
-                            <ul className="mini-list">
-                                {Object.entries(hostNightData.mafiaVotes).map(([voterId, targetId]) => (
-                                    <li key={voterId}>
-                                        {getName(voterId)} 🔪 will töten: <span style={{color:'red'}}>{getName(targetId)}</span>
-                                    </li>
-                                ))}
-                                {Object.keys(hostNightData.mafiaVotes).length === 0 && <li>Noch keine Stimmen...</li>}
-                            </ul>
-                        </div>
-                        <div style={{marginTop: 10}}>
-                            <strong>Arzt:</strong> {hostNightData.docTarget ? `Schützt ${getName(hostNightData.docTarget)}` : "Schläft/Überlegt..."}
-                        </div>
-                        <div>
-                            <strong>Detektiv:</strong> {hostNightData.detTarget ? `Prüft ${getName(hostNightData.detTarget)}` : "Schläft/Überlegt..."}
-                        </div>
-                    </div>
-                )}
+          {/* SPALTE 1: Steuerung & Lobby */}
+          <div className="host-panel host-controls">
+            <h3>🕹️ Steuerung</h3>
+            {gamePhase === 'LOBBY' ? (
+              <>
+                <Lobby socket={socket} players={players} isHost={true} />
+                <div className="qr-mini">
+                  <QRCode value={CLIENT_URL} size={150} /><br />
+                  <small>{CLIENT_URL}</small>
+                </div>
+              </>
+            ) : (
+              <div className="active-game-controls">
+                <button onClick={() => socket.emit('forcePhaseNext')} className="btn-emergency">
+                  ⏩ Phase überspringen
+                </button>
+                <hr />
+                <button
+                  onClick={() => handleHostAction("Neustart?", "Alles wird gelöscht.", () => socket.emit('resetGame'))}
+                  className="btn-restart">
+                  🔄 Reset
+                </button>
+                <button
+                  onClick={() => handleHostAction("KICK ALL?", "Alle fliegen raus.", () => socket.emit('kickAll'), '#ff0000')}
+                  className="btn-kick">
+                  ⚠️ Kick All
+                </button>
+              </div>
+            )}
+          </div>
 
-                {/* TAG STATUS (Voting) */}
-                {(gamePhase.startsWith('DAY') || gamePhase === 'DAY_VOTE') && (
-                    <div className="info-box day-box">
-                        <h4>☀️ Tag Aktionen</h4>
-                        <p>Stimmen abgegeben: {Object.keys(currentVotes).length} / {players.filter(p => p.isAlive && p.playerId !== 'host').length}</p>
-                        {/* Wer führt gerade? Simple Berechnung für Host View */}
-                        <div className="vote-tally">
-                            {(() => {
-                                const counts = {};
-                                Object.values(currentVotes).forEach(t => counts[t] = (counts[t] || 0) + 1);
-                                return Object.entries(counts).map(([targetId, count]) => (
-                                    <div key={targetId} className="vote-bar">
-                                        <span>{getName(targetId)}:</span> 
-                                        <strong>{count}</strong>
-                                    </div>
-                                ));
-                            })()}
-                        </div>
-                    </div>
-                )}
-            </div>
+          {/* SPALTE 2: Live Informationen (Nacht & Tag) */}
+          <div className="host-panel host-live-info">
+            <h3>📊 Live Status</h3>
 
-            {/* SPALTE 3: Chronik / Log */}
-            <div className="host-panel host-log">
-                <h3>📜 Chronik</h3>
-                <div className="log-container">
-                    {gameLog.length === 0 && <p style={{color:'#999'}}>Spielprotokoll leer...</p>}
-                    {gameLog.map((entry, i) => (
-                        <div key={i} className={`log-entry type-${entry.type}`}>
-                            <span className="log-time">[{entry.time}]</span> 
-                            <span className="log-msg">{entry.msg}</span>
-                        </div>
+            {/* NACHT STATUS */}
+            {gamePhase.startsWith('NIGHT') && (
+              <div className="info-box night-box">
+                <h4>🌙 Nacht Aktionen</h4>
+                <div>
+                  <strong>Mafia Votes:</strong>
+                  <ul className="mini-list">
+                    {Object.entries(hostNightData.mafiaVotes).map(([voterId, targetId]) => (
+                      <li key={voterId}>
+                        {getName(voterId)} 🔪 will töten: <span style={{ color: 'red' }}>{getName(targetId)}</span>
+                      </li>
                     ))}
+                    {Object.keys(hostNightData.mafiaVotes).length === 0 && <li>Noch keine Stimmen...</li>}
+                  </ul>
                 </div>
-            </div>
+                <div style={{ marginTop: 10 }}>
+                  <strong>Arzt:</strong> {hostNightData.docTarget ? `Schützt ${getName(hostNightData.docTarget)}` : "Schläft/Überlegt..."}
+                </div>
+                <div>
+                  <strong>Detektiv:</strong> {hostNightData.detTarget ? `Prüft ${getName(hostNightData.detTarget)}` : "Schläft/Überlegt..."}
+                </div>
+              </div>
+            )}
 
-            {/* SPALTE 4: Spieler Liste (Kompakt) */}
-            <div className="host-panel host-players">
-                <h3>👥 Spieler ({players.length})</h3>
-                <div className="player-list-scroll">
-                    <table className="player-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Rolle</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {players.map(p => {
-                                // Zusatzinfo: Hat der Spieler schon abgestimmt?
-                                const hasVoted = gamePhase.startsWith('DAY') && currentVotes[p.playerId];
-                                const isMafiaVoter = gamePhase === 'NIGHT_MAFIA' && hostNightData.mafiaVotes[p.playerId];
-                                
-                                return (
-                                    <tr key={p.playerId} className={p.isAlive ? 'row-alive' : 'row-dead'}>
-                                        <td style={{ fontWeight: 'bold' }}>
-                                            {p.name}
-                                        </td>
-                                        <td>
-                                            <span className={`role-badge badge-${p.role.toLowerCase()}`}>{p.role}</span>
-                                        </td>
-                                        <td>
-                                            {p.isAlive ? (
-                                                (hasVoted || isMafiaVoter) ? "✅ Fertig" : "⏳ Denkt..."
-                                            ) : "💀 Tot"}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+            {/* TAG STATUS (Voting) */}
+            {(gamePhase.startsWith('DAY') || gamePhase === 'DAY_VOTE') && (
+              <div className="info-box day-box">
+                <h4>☀️ Tag Aktionen</h4>
+                <p>Stimmen abgegeben: {Object.keys(currentVotes).length} / {players.filter(p => p.isAlive && p.playerId !== 'host').length}</p>
+                {/* Wer führt gerade? Simple Berechnung für Host View */}
+                <div className="vote-tally">
+                  {(() => {
+                    const counts = {};
+                    Object.values(currentVotes).forEach(t => counts[t] = (counts[t] || 0) + 1);
+                    return Object.entries(counts).map(([targetId, count]) => (
+                      <div key={targetId} className="vote-bar">
+                        <span>{getName(targetId)}:</span>
+                        <strong>{count}</strong>
+                      </div>
+                    ));
+                  })()}
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* SPALTE 3: Chronik / Log */}
+          <div className="host-panel host-log">
+            <h3>📜 Chronik</h3>
+            <div className="log-container">
+              {gameLog.length === 0 && <p style={{ color: '#999' }}>Spielprotokoll leer...</p>}
+              {gameLog.map((entry, i) => (
+                <div key={i} className={`log-entry type-${entry.type}`}>
+                  <span className="log-time">[{entry.time}]</span>
+                  <span className="log-msg">{entry.msg}</span>
+                </div>
+              ))}
             </div>
+          </div>
+
+          {/* SPALTE 4: Spieler Liste (Kompakt) */}
+          <div className="host-panel host-players">
+            <h3>👥 Spieler ({players.length})</h3>
+            <div className="player-list-scroll">
+              <table className="player-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Rolle</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {players.map(p => {
+                    // Zusatzinfo: Hat der Spieler schon abgestimmt?
+                    const hasVoted = gamePhase.startsWith('DAY') && currentVotes[p.playerId];
+                    const isMafiaVoter = gamePhase === 'NIGHT_MAFIA' && hostNightData.mafiaVotes[p.playerId];
+
+                    return (
+                      <tr key={p.playerId} className={p.isAlive ? 'row-alive' : 'row-dead'}>
+                        <td style={{ fontWeight: 'bold' }}>
+                          {p.name}
+                        </td>
+                        <td>
+                          <span className={`role-badge badge-${p.role.toLowerCase()}`}>{p.role}</span>
+                        </td>
+                        <td>
+                          {p.isAlive ? (
+                            (hasVoted || isMafiaVoter) ? "✅ Fertig" : "⏳ Denkt..."
+                          ) : "💀 Tot"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
         </div>
       </div>
@@ -474,7 +512,7 @@ function App() {
   return (
     <div className={`player-app-container ${isNight ? 'night-mode' : ''}`}>
       <button onClick={logout} className="btn-logout">❌</button>
-      
+
       {/* <div className="header-bar">
 
         <h4>Mafia - Phase: {gamePhase}</h4>
@@ -503,7 +541,7 @@ function App() {
             style={{
               backgroundColor: roleConfirmed ? '' : '#69756c',
               cursor: roleConfirmed ? 'default' : 'pointer',
-              transform: roleConfirmed ? 'none' : '' ,
+              transform: roleConfirmed ? 'none' : '',
               color: '#57233a'
             }}
           >
@@ -514,12 +552,22 @@ function App() {
 
       {gamePhase === 'READY_CHECK' && (
         <div>
-          <h3>Macht euch bereit für die Nacht...</h3>
-          <button onClick={() => socket.emit('playerReady', me.playerId)} className="btn-big-action bg-orange">BEREIT FÜR DIE NACHT</button>
+          <h3>Die Sonne geht runter...</h3>
+          <button
+            onClick={() => {
+              socket.emit('playerReady', me.playerId);
+              setNightReady(true);
+            }}
+            disabled={nightReady}
+            className={`btn-big-action ${nightReady ? 'bg-blue' : 'bg-orange'}`}
+            style={nightReady ? { opacity: 0.6, cursor: 'default' } : {}}
+          >
+            {nightReady ? "WARTE AUF ANDERE..." : "BEREIT FÜR DIE NACHT"}
+          </button>
         </div>
       )}
 
-      {gamePhase.startsWith('NIGHT') && <NightPhase socket={socket} phase={gamePhase} me={me} players={players} />}
+      {gamePhase.startsWith('NIGHT') && <NightPhase socket={socket} phase={gamePhase} me={me} players={players} duration={phaseDuration}/>}
       {gamePhase.startsWith('DAY') && <DayPhase socket={socket} phase={gamePhase} me={me} players={players} tieCandidates={tieCandidates} currentVotes={currentVotes} />}
 
       {/* OVERLAY LOGIK */}
