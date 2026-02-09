@@ -273,6 +273,7 @@ button:disabled {
 .badge-mafia { background: #c0392b; color: white; }
 .badge-arzt { background: #27ae60; color: white; }
 .badge-detektiv { background: #2980b9; color: white; }
+.badge-lady { background: #9c27b0; color: white; }
 .badge-bürger { background: #7f8c8d; color: white; }
 .badge-spoiler {background: #333; color: #666; border: 1px dashed #555; letter-spacing: 2px; width: 80px; text-align: center;}
 
@@ -521,6 +522,7 @@ button:disabled {
 
 .btn-doctor { background: var(--color-accent-green); }
 .btn-detective { background: var(--color-accent-blue); }
+.btn-lady { background: #9c27b0; border: 1px solid #7b1fa2; }
 
 /* Day Actions / Voting */
 .btn-vote {

@@ -5,9 +5,10 @@ export default function Lobby({ socket, players, isHost }) {
     const [mafiaCount, setMafiaCount] = useState(1);
     const [hasDoc, setHasDoc] = useState(true);
     const [hasDet, setHasDet] = useState(true);
+    const [hasLady, setHasLady] = useState(false);
 
     const startGame = () => {
-        socket.emit('setupGame', { mafiaCount, hasDoctor: hasDoc, hasDetective: hasDet });
+        socket.emit('setupGame', { mafiaCount, hasDoctor: hasDoc, hasDetective: hasDet, hasLady });
     };
 
     if (isHost) {
@@ -26,6 +27,10 @@ export default function Lobby({ socket, players, isHost }) {
                     
                     <label>
                         <input type="checkbox" checked={hasDet} onChange={e => setHasDet(e.target.checked)} /> Detektiv dabei?
+                    </label>
+
+                    <label>
+                        <input type="checkbox" checked={hasLady} onChange={e => setHasLady(e.target.checked)} /> Lady dabei?
                     </label>
 
                     <button onClick={startGame} className="btn-start-game">

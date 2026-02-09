@@ -41,6 +41,7 @@ export default function NightPhase({ socket, phase, me, players, duration}) {
         if(phase === 'NIGHT_MAFIA') socket.emit('mafiaVote', { voterId: me.playerId, targetId });
         if(phase === 'NIGHT_DOCTOR') socket.emit('doctorAction', targetId);
         if(phase === 'NIGHT_DETECTIVE') socket.emit('detectiveAction', targetId);
+        if(phase === 'NIGHT_LADY') socket.emit('ladyAction', targetId);
     };
 
     if (phase === 'NIGHT_TRANSITION') {
@@ -117,6 +118,29 @@ export default function NightPhase({ socket, phase, me, players, duration}) {
                     players.filter(p => p.isAlive && p.playerId !== me.playerId).map(p => (
                         <button key={p.playerId} onClick={() => sendAction(p.playerId)} className="action-btn btn-detective">
                             🔍 {p.name}
+                        </button>
+                    ))
+                )}
+            </div>
+        )
+    }
+
+    if (phase === 'NIGHT_LADY' && me.role === 'Lady' && me.isAlive) {
+        const targets = players.filter(p => p.isAlive && p.playerId !== me.playerId);   //debug
+        console.log("Mögliche Ziele:", targets);                                        //debug
+        return (
+            <div>
+                <TimerBar duration={duration} />
+                {announcement && <div className="toast-msg">{announcement}</div>}
+                <h2 style={{color:'#9c27b0'}}>💋 LADY</h2>
+                <p>Wen möchtest du besuchen?</p>
+                <p style={{fontSize: '0.8rem', color: '#ccc'}}>
+                    (Wird er angegriffen, überlebt er. Wirst DU angegriffen, sterbt ihr beide!)
+                </p>
+                {hasActed ? <p>Entscheidung getroffen.</p> : (
+                    players.filter(p => p.isAlive && p.playerId !== me.playerId).map(p => (
+                        <button key={p.playerId} onClick={() => sendAction(p.playerId)} className="action-btn btn-lady">
+                            💋 {p.name}
                         </button>
                     ))
                 )}

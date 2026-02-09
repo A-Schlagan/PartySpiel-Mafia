@@ -13,9 +13,9 @@ const DISCUSSION_TIME_MS = 10000;
 const NIGHT_PHASE_TIME_MS = 30000;
 
 let players = {}; 
-let settings = { mafiaCount: 1, hasDoctor: true, hasDetective: true };
+let settings = { mafiaCount: 1, hasDoctor: true, hasDetective: true, hasLady: false };
 let gamePhase = "LOBBY"; 
-let nightActions = { mafiaVotes: {}, doctorTarget: null, detectiveTarget: null };
+let nightActions = { mafiaVotes: {}, doctorTarget: null, detectiveTarget: null, ladyTarget: null, detectiveCheckDone: false }; //detectiveCheckDone: false???
 let dayVotes = {};
 let readyPlayers = []; 
 let tieCandidates = []; 
@@ -49,6 +49,7 @@ io.on('connection', (socket) => {
         let roles = Array(parseInt(settings.mafiaCount)).fill("Mafia");
         if(settings.hasDoctor) roles.push("Arzt");
         if(settings.hasDetective) roles.push("Detektiv");
+        if(settings.hasLady) roles.push("Lady");                            
         while(roles.length < pIds.length) roles.push("Bürger");
         for (let i = roles.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -132,6 +133,20 @@ io.on('connection', (socket) => {
         gameTimer = setTimeout(() => nextNightPhase(), 4000);
     });
 
+    socket.on('ladyAction', (targetId) => {
+        if(gamePhase !== 'NIGHT_LADY') return;
+        const actor = players[Object.keys(players).find(id => players[id].socketId === socket.id)];
+        if(!actor || !actor.isAlive || actor.role !== 'Lady') return;
+
+        nightActions.ladyTarget = targetId;
+
+        const hostSocket = Object.values(players).find(p => p.playerId === 'host')?.socketId;
+        if(hostSocket) io.to(hostSocket).emit('hostActionUpdate', { type: 'LADY_ACTION', target: targetId });
+        
+        if(gameTimer) clearTimeout(gameTimer);
+        nextNightPhase(); 
+    });
+
     socket.on('voteDay', ({ voterId, targetId }) => {
         dayVotes[voterId] = targetId;
         io.emit('voteUpdate', dayVotes);
@@ -207,13 +222,13 @@ function transitionToPhase(nextPhase, message, soundKey, delayMs) {
 function startNight() {
     if(gameTimer) clearTimeout(gameTimer);
     
-    nightActions = { mafiaVotes: {}, doctorTarget: null, detectiveTarget: null, detectiveCheckDone: false };
+    nightActions = { mafiaVotes: {}, doctorTarget: null, detectiveTarget: null, ladyTarget: null, detectiveCheckDone: false };
 
     transitionToPhase(
         "NIGHT_MAFIA", 
         "Es wird dunkel... Alle schlafen ein!", 
         "night_start_sound", 
-        6000
+        10000
     );
 }
 
@@ -226,6 +241,9 @@ function nextNightPhase() {
         else if(settings.hasDetective) {
             transitionToPhase("NIGHT_DETECTIVE", "Die Mafia schläft ein...", "mafia_sleep_sound", 4000);
         }
+        else if(settings.hasLady) {
+            transitionToPhase("NIGHT_LADY", "Die Mafia schläft ein...", "mafia_sleep_sound", 4000);
+        }
         else { 
             transitionToPhase("DAY_ANNOUNCE", "Die Sonne geht bald auf...", "morning_rooster", 4000);
         }
@@ -234,14 +252,24 @@ function nextNightPhase() {
         if(settings.hasDetective) {
             transitionToPhase("NIGHT_DETECTIVE", "Der Arzt schläft ein...", "doctor_sleep_sound", 4000);
         }
+        else if(settings.hasLady) {
+            transitionToPhase("NIGHT_LADY", "Der Arzt schläft ein...", "doctor_sleep_sound", 4000);
+        }
         else { 
             transitionToPhase("DAY_ANNOUNCE", "Der Arzt schläft ein...", "doctor_sleep_sound", 4000);
         }
     } 
     else if (gamePhase === "NIGHT_DETECTIVE") {
-        transitionToPhase("DAY_ANNOUNCE", "Der Detektiv schläft ein...", "detective_sleep_sound", 4000);
+        if(settings.hasLady) {
+            transitionToPhase("NIGHT_LADY", "Der Detektiv schläft ein...", "detective_sleep_sound", 4000);
+        } else {
+            transitionToPhase("DAY_ANNOUNCE", "Der Detektiv schläft ein...", "detective_sleep_sound", 4000);
+        }
     }
-}
+    else if (gamePhase === "NIGHT_LADY") {
+        transitionToPhase("DAY_ANNOUNCE", "Die Lady geht schlafen...", "lady_sleep_sound", 4000);
+    }
+}    
 
 function processPhaseStart(phase) {
     io.emit('gameStateUpdate', { gamePhase: phase, duration: NIGHT_PHASE_TIME_MS });
@@ -252,6 +280,7 @@ function processPhaseStart(phase) {
     if (phase === 'NIGHT_MAFIA') { wakeUpMsg = "Mafia erwache!"; wakeUpSound = "mafia_wake"; }
     if (phase === 'NIGHT_DOCTOR') { wakeUpMsg = "Arzt erwache!"; wakeUpSound = "doctor_wake"; }
     if (phase === 'NIGHT_DETECTIVE') { wakeUpMsg = "Detektiv erwache!"; wakeUpSound = "detective_wake"; }
+    if (phase === 'NIGHT_LADY') { wakeUpMsg = "Lady erwache!"; wakeUpSound = "lady_wake"; }  
 
     io.emit('nightAnnouncement', { message: wakeUpMsg, sound: wakeUpSound });
 
@@ -259,6 +288,7 @@ function processPhaseStart(phase) {
     if(phase === 'NIGHT_MAFIA') activeRole = 'Mafia';
     if(phase === 'NIGHT_DOCTOR') activeRole = 'Arzt';
     if(phase === 'NIGHT_DETECTIVE') activeRole = 'Detektiv';
+    if(phase === 'NIGHT_LADY') activeRole = 'Lady';
 
     if(!activeRole) return;
 
@@ -283,28 +313,63 @@ function processPhaseStart(phase) {
 function startDay() {
     gamePhase = "DAY_ANNOUNCE";
     
-    let victimId = Object.values(nightActions.mafiaVotes)[0];   
-    let message = "Es war eine ruhige Nacht. Niemand ist gestorben.";
-
     const counts = {};
     Object.values(nightActions.mafiaVotes).forEach(v => counts[v] = (counts[v] || 0) + 1);
     let maxVotes = 0;
-    let finalVictim = null;
+    let mafiaTargetId = null;
     Object.keys(counts).forEach(id => {
         if(counts[id] > maxVotes) {
             maxVotes = counts[id];
-            finalVictim = id;
+            mafiaTargetId = id;
         }
     });
 
-    if (finalVictim) {
-        if (finalVictim === nightActions.doctorTarget) {
-            message = `Schüsse in der Nacht!!  Aber niemand stirbt.`;
-        } else if (players[finalVictim]) {
-            players[finalVictim].isAlive = false;
-            message = `Guten Morgen... aber nicht für ${players[finalVictim].name}. Wurde in der Nacht ermordet!`;
+    let deadPlayers = [];
+    let message = "Es war eine ruhige Nacht. Niemand ist gestorben.";
+
+    if (mafiaTargetId) {
+        const mafiaVictim = players[mafiaTargetId];
+        const ladyVictimId = nightActions.ladyTarget;
+        const ladyPlayer = Object.values(players).find(p => p.role === 'Lady' && p.isAlive);
+        const ladyId = ladyPlayer ? ladyPlayer.playerId : null;
+        
+        let targetSaved = false;
+
+        if (ladyId && mafiaTargetId === ladyId) {
+            // Check ob Arzt die Lady rettet
+            if (nightActions.doctorTarget === ladyId) {
+                targetSaved = true; 
+                message = "Schüsse in der Nacht! Ist jemand tot?";
+            } else {
+                deadPlayers.push(ladyId);
+                
+                if (ladyVictimId && ladyVictimId !== ladyId && players[ladyVictimId] && players[ladyVictimId].isAlive) {
+                    deadPlayers.push(ladyVictimId);
+                    message = `TRAGÖDIE! Nachts wurden (${players[ladyId].name}) und ${players[ladyVictimId].name} ermordet!`;
+                } else {
+                    message = `Nachts wurde (${players[ladyId].name}) ermordet!`;
+                }
+            }
+        } 
+        else {
+            if (nightActions.doctorTarget === mafiaTargetId) {
+                targetSaved = true;
+                message = "Schüsse in der Nacht! Ist jemand tot?";
+            } 
+            else if (ladyVictimId === mafiaTargetId) {
+                targetSaved = true;
+                message = "Schüsse in der Nacht! Ist jemand tot?";
+            }
+            if (!targetSaved) {
+                deadPlayers.push(mafiaTargetId);
+                message = `Guten Morgen... aber nicht für ${players[mafiaTargetId].name}. Wurde von der Mafia ermordet!`;
+            }
         }
     }
+
+    deadPlayers.forEach(pid => {
+        if(players[pid]) players[pid].isAlive = false;
+    });
 
     io.emit('gameStateUpdate', { gamePhase, players: Object.values(players) });
     io.emit('playSound', 'morning');

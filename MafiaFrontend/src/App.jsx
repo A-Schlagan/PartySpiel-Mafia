@@ -264,6 +264,10 @@ function App() {
         setHostNightData(prev => ({ ...prev, detTarget: update.target }));
         addLog("Der Detektiv hat jemanden untersucht.", 'action');
       }
+      if (update.type === 'LADY_ACTION') {
+        setHostNightData(prev => ({ ...prev, ladyTarget: update.target }));
+        addLog("Die Lady hat jemanden ausgewählt.", 'action');
+      }
     });
 
     socket.on('gameStateUpdate', (data) => {
@@ -276,7 +280,7 @@ function App() {
         addLog(`Phasenwechsel: ${phaseName}`, 'phase');
 
         if (data.gamePhase === 'NIGHT_TRANSITION') {
-          setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null });
+          setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
         }
       }
     });
@@ -380,6 +384,9 @@ function App() {
                 </div>
                 <div>
                   <strong>Detektiv:</strong> {hostNightData.detTarget ? `Prüft ${getName(hostNightData.detTarget)}` : "Schläft/Überlegt..."}
+                </div>
+                <div>
+                  <strong>Lady:</strong> {hostNightData.ladyTarget ? `Besucht ${getName(hostNightData.ladyTarget)}` : "Schläft/Überlegt..."}
                 </div>
               </div>
             )}
