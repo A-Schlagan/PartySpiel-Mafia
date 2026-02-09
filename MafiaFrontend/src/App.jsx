@@ -23,6 +23,7 @@ function App() {
   const [announcement, setAnnouncement] = useState("");
   const [tieCandidates, setTieCandidates] = useState([]);
   const [isHostConsole, setIsHostConsole] = useState(false);
+  const [showRoles, setShowRoles] = useState(false);
   const [currentVotes, setCurrentVotes] = useState({});
   const [roleConfirmed, setRoleConfirmed] = useState(false);
   const [gameLog, setGameLog] = useState([]);
@@ -50,7 +51,7 @@ function App() {
       'detective_sleep_sound': 'det_sleep.mp3'
     };
 
-    const fileName = soundMap[soundKey] || `${soundKey}.mp3`; // Fallback
+    const fileName = soundMap[soundKey] || `${soundKey}.mp3`; 
     const audio = new Audio(`/sounds/${fileName}`);
 
     audio.play().catch(e => console.log("Audio Autoplay blockiert (Browser Policy):", e));
@@ -295,7 +296,7 @@ function App() {
 
 
   // ------------------------------------------------------------------
-  // HOST CONSOLE VIEW (Großbildschirm)
+  // HOST CONSOLE VIEW 
   // ------------------------------------------------------------------
   if (isHostConsole) {
     const getName = (id) => players.find(p => p.playerId === id)?.name || "Unbekannt";
@@ -336,19 +337,23 @@ function App() {
                 <button onClick={() => socket.emit('forcePhaseNext')} className="btn-emergency">
                   ⏩ Phase überspringen
                 </button>
-                <hr />
+              </div>
+            )}   
+              <div className="danger-zone">
+                <p style={{fontSize: '0.8rem', color: '#888', marginBottom: '5px'}}>Session Verwaltung:</p>
                 <button
                   onClick={() => handleHostAction("Neustart?", "Alles wird gelöscht.", () => socket.emit('resetGame'))}
-                  className="btn-restart">
+                  className="btn-restart"
+                  style={{ width: '100%', marginBottom: '10px' }}>
                   🔄 Reset
                 </button>
                 <button
                   onClick={() => handleHostAction("KICK ALL?", "Alle fliegen raus.", () => socket.emit('kickAll'), '#ff0000')}
-                  className="btn-kick">
+                  className="btn-kick"
+                  style={{ width: '100%' }}>
                   ⚠️ Kick All
                 </button>
-              </div>
-            )}
+              </div>            
           </div>
 
           {/* SPALTE 2: Live Informationen (Nacht & Tag) */}
@@ -417,7 +422,24 @@ function App() {
 
           {/* SPALTE 4: Spieler Liste (Kompakt) */}
           <div className="host-panel host-players">
-            <h3>👥 Spieler ({players.length})</h3>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #555', marginBottom: '10px', paddingBottom: '5px'}}>
+                <h3 style={{margin: 0, border: 'none', padding: 0}}>👥 Spieler ({players.length})</h3>
+                <button 
+                    onClick={() => setShowRoles(!showRoles)} 
+                    style={{
+                        background: 'transparent', 
+                        border: '1px solid #666', 
+                        color: showRoles ? '#ff4444' : '#888',
+                        padding: '2px 8px',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer'
+                    }}
+                    title="Rollen anzeigen/verstecken"
+                >
+                    {showRoles ? "🙈 Verstecken" : "👁️ Anzeigen"}
+                </button>
+            </div>
+            
             <div className="player-list-scroll">
               <table className="player-table">
                 <thead>
@@ -429,9 +451,15 @@ function App() {
                 </thead>
                 <tbody>
                   {players.map(p => {
-                    // Zusatzinfo: Hat der Spieler schon abgestimmt?
                     const hasVoted = gamePhase.startsWith('DAY') && currentVotes[p.playerId];
                     const isMafiaVoter = gamePhase === 'NIGHT_MAFIA' && hostNightData.mafiaVotes[p.playerId];
+                    
+                    let roleDisplay = null;
+                    if (showRoles) {
+                        roleDisplay = <span className={`role-badge badge-${p.role.toLowerCase()}`}>{p.role}</span>;
+                    } else {
+                        roleDisplay = <span className="role-badge badge-spoiler">???</span>;
+                    }
 
                     return (
                       <tr key={p.playerId} className={p.isAlive ? 'row-alive' : 'row-dead'}>
@@ -439,7 +467,7 @@ function App() {
                           {p.name}
                         </td>
                         <td>
-                          <span className={`role-badge badge-${p.role.toLowerCase()}`}>{p.role}</span>
+                          {roleDisplay}
                         </td>
                         <td>
                           {p.isAlive ? (
