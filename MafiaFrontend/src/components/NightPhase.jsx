@@ -126,8 +126,8 @@ export default function NightPhase({ socket, phase, me, players, duration}) {
     }
 
     if (phase === 'NIGHT_LADY' && me.role === 'Lady' && me.isAlive) {
-        const targets = players.filter(p => p.isAlive && p.playerId !== me.playerId);   //debug
-        console.log("Mögliche Ziele:", targets);                                        //debug
+        const targets = players.filter(p => p.isAlive && p.playerId !== me.playerId);   
+        console.log("Mögliche Ziele:", targets);                                     
         return (
             <div>
                 <TimerBar duration={duration} />

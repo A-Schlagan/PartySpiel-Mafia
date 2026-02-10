@@ -3,8 +3,6 @@ import React, { useState } from 'react';
 
 export default function RoleCard({ role, name }) {
     const [isRevealed, setIsRevealed] = useState(false);
-
-    // Events für Maus und Touch (Handy)
     const startReveal = () => setIsRevealed(true);
     const endReveal = () => setIsRevealed(false);
 

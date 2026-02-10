@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 
 export default function Lobby({ socket, players, isHost }) {
     const [mafiaCount, setMafiaCount] = useState(1);
-    const [hasDoc, setHasDoc] = useState(true);
-    const [hasDet, setHasDet] = useState(true);
+    const [hasDoc, setHasDoc] = useState(false);
+    const [hasDet, setHasDet] = useState(false);
     const [hasLady, setHasLady] = useState(false);
 
     const startGame = () => {
@@ -41,10 +41,9 @@ export default function Lobby({ socket, players, isHost }) {
         );
     }
 
-    // Ansicht für Spieler (nur Liste)
     return (
         <div>
-            <h3>Lobby</h3>
+            <h2>Lobby</h2>
             <p>{players.length} Spieler verbunden</p>
             <ul style={{listStyle: 'none', padding: 0}}>
                 {players.map(p => (

@@ -50,7 +50,7 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
                         <div className="tiebreaker-info">
                             <h3 className="tie-title">STICHWAHL!</h3>
                             <p>
-                                Gleichstand! Ihr müsst euch zwischen den markierten Spielern entscheiden. 
+                                Gleichstand! Ihr müsst euch zwischen diesen Spielern entscheiden. 
                                 <br/>
                                 <small>Bei erneutem Gleichstand stirbt niemand.</small>
                             </p>
@@ -68,8 +68,7 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
                                     onClick={() => vote(p.playerId)}
                                     disabled={votedFor !== null} 
                                     className={`btn-vote ${votedFor === p.playerId ? 'selected' : ''}`}
- // !!!!!!!!!Styling für bessere Lesbarkeit der Liste anpassen
-                                    style={{ display: 'flex', /*flexDirection: 'column',*/ alignItems: 'center', gap: '5px' }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
                                 >
                                     <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>👉 {p.name}</span>
                                     

@@ -30,9 +30,40 @@ function App() {
   const [hostNightData, setHostNightData] = useState({ mafiaVotes: {}, docTarget: null, detTarget: null });
   const [nightReady, setNightReady] = useState(false);
   const [phaseDuration, setPhaseDuration] = useState(0);
+  const [winner, setWinner] = useState(null);
+  const [showGameOverOverlay, setShowGameOverOverlay] = useState(false);
 
   const playerId = useRef(localStorage.getItem("mafia_pid") || uuidv4());
   const wasAlive = useRef(true);
+  const wakeLockRef = useRef(null);
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
+  // Bildschirm always on
+  const requestWakeLock = async () => {
+    if (!isMobile()) return;
+    if ('wakeLock' in navigator) {
+      try {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+      } catch (err) {
+        console.error(`${err.name}, ${err.message}`);
+      }
+    }
+  };
+
+  // Vollbildmodus
+  const enterFullScreen = () => {
+    if (!isMobile()) return;
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(err => console.log(err));
+    } else if (elem.webkitRequestFullscreen) { /* Safari */
+      elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { /* IE11 */
+      elem.msRequestFullscreen();
+    }
+  };
 
   const triggerVibration = (pattern) => {
     if (navigator.vibrate) navigator.vibrate(pattern);
@@ -48,7 +79,10 @@ function App() {
       'doctor_wake': 'doctor_wake.mp3',
       'doctor_sleep_sound': 'doc_sleep.mp3',
       'detective_wake': 'detective_wake.mp3',
-      'detective_sleep_sound': 'det_sleep.mp3'
+      'detective_sleep_sound': 'det_sleep.mp3',
+      'lady_wake_sound':'lady_wake.mp3',
+      'lady_sleep_sound':'lady_sleep.mp3',
+      'game_over': 'game_over.mp3'
     };
 
     const fileName = soundMap[soundKey] || `${soundKey}.mp3`; 
@@ -89,7 +123,6 @@ function App() {
   useEffect(() => {
     if (me) {
       if (wasAlive.current === true && me.isAlive === false) {
-        console.log("VIBRATION: Tod erkannt!");
         if (navigator.vibrate) navigator.vibrate([2000]);
       }
       wasAlive.current = me.isAlive;
@@ -137,6 +170,15 @@ function App() {
 
       socket.on('gameStateUpdate', (data) => {
         if (data.gamePhase) setGamePhase(data.gamePhase);
+
+        if (data.gamePhase === 'GAME_OVER' && data.winner) {
+            setWinner(data.winner);
+            setShowGameOverOverlay(true);            
+            setTimeout(() => {
+              setShowGameOverOverlay(false);
+            }, 10000);
+        }
+
         if (data.duration) {
              setPhaseDuration(data.duration);
         } else {
@@ -180,11 +222,14 @@ function App() {
         if (!isHostConsole) {
           const messageHtml = data.isEvil
             ? '<div class="pulse-text">MAFIA! 😈</div>'
-            : '<div class="pulse-text style="color: #28a745">Bürger. 😇</div>';
+            : '<div class="pulse-text" style="color: #28a745">Bürger. 😇</div>';
           Swal.fire({
-            title: 'Detektiv Ergebnis',
             html: messageHtml,
-            confirmButtonText: 'Verstanden'
+            timer: 5000,
+            background: '#121212',
+            color: '#ffffff',
+            confirmButtonText: 'Verstanden',
+            confirmButtonColor: '#3085d6'
           });
         }
       });
@@ -216,6 +261,11 @@ function App() {
         }
       });
 
+      socket.on('serverLog', ({ msg, type }) => {
+          const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          setGameLog(prev => [{ time, msg, type }, ...prev]);
+      });
+
       socket.on('forceReload', () => {
         localStorage.clear();
         window.location.reload();
@@ -236,14 +286,14 @@ function App() {
         socket.off('detectiveResult');
         socket.off('playSound');
         socket.off('gameReset');
+        socket.off('serverLog');
         socket.off('forceReload');
       }
     };
 
   }, [socket, isHostConsole, me]);
 
-
-
+  // Chronik & Live Status
   useEffect(() => {
     if (!socket) return;
 
@@ -253,55 +303,77 @@ function App() {
     };
 
     socket.on('hostActionUpdate', (update) => {
+      console.log("Host Update empfangen:", update); 
+
       if (update.type === 'MAFIA_VOTE') {
         setHostNightData(prev => ({ ...prev, mafiaVotes: update.data }));
+        addLog("Mafia hat abgestimmt/geändert.", 'action'); 
       }
       if (update.type === 'DOC_ACTION') {
         setHostNightData(prev => ({ ...prev, docTarget: update.target }));
-        addLog("Der Arzt hat ein Ziel gewählt.", 'action');
+        addLog("👨‍⚕️ Der Arzt hat sich entschieden.", 'success');
       }
       if (update.type === 'DET_ACTION') {
         setHostNightData(prev => ({ ...prev, detTarget: update.target }));
-        addLog("Der Detektiv hat jemanden untersucht.", 'action');
+        addLog("🕵️ Der Detektiv prüft jemanden.", 'info');
       }
       if (update.type === 'LADY_ACTION') {
         setHostNightData(prev => ({ ...prev, ladyTarget: update.target }));
-        addLog("Die Lady hat jemanden ausgewählt.", 'action');
+        addLog("💋 Die Lady ist unterwegs.", 'warning');
       }
     });
 
     socket.on('gameStateUpdate', (data) => {
       if (data.gamePhase) {
-        let phaseName = data.gamePhase;
-        if (phaseName === 'NIGHT_MAFIA') phaseName = 'Nacht: Mafia Phase';
-        if (phaseName === 'DAY_DISCUSS') phaseName = 'Tag: Diskussion';
-        if (phaseName === 'DAY_VOTE') phaseName = 'Tag: Abstimmung';
+        const phaseNames = {
+            'LOBBY': 'Warteraum',
+            'ROLE_REVEAL': 'Rollenverteilung',
+            'NIGHT_TRANSITION': 'Nacht bricht ein...',
+            'NIGHT_MAFIA': 'Nacht: Mafia Phase',
+            'NIGHT_DOCTOR': 'Nacht: Arzt Phase',
+            'NIGHT_DETECTIVE': 'Nacht: Detektiv Phase',
+            'NIGHT_LADY': 'Nacht: Lady Phase',
+            'DAY_ANNOUNCE': 'Der Morgen graut',
+            'DAY_DISCUSS': 'Tag: Diskussion',
+            'DAY_VOTE': 'Tag: Abstimmung',
+            'DAY_TIEBREAKER': 'Tag: Stichwahl',
+            'GAME_OVER': 'Spielende'
+        };
 
-        addLog(`Phasenwechsel: ${phaseName}`, 'phase');
-
-        if (data.gamePhase === 'NIGHT_TRANSITION') {
-          setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
+        if (data.gamePhase === 'NIGHT_TRANSITION' || data.gamePhase === 'DAY_ANNOUNCE') {
+             setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
         }
+        
+        const niceName = phaseNames[data.gamePhase] || data.gamePhase;
+        addLog(`Phasenwechsel: ${niceName}`, 'phase');
       }
     });
 
+    socket.on('voteUpdate', (votes) => {
+        const count = Object.keys(votes).length;
+        if (count > 0) {
+          addLog(`Ein neuer Vote ist eingegangen. (${count} Stimmen total)`, 'info');
+        }
+    });
+
     socket.on('announcement', (msg) => {
-      addLog(msg, 'alert');
+      addLog(`📢 ${msg}`, 'alert');
     });
 
     socket.on('dayAnnouncement', (data) => {
-      addLog(`${data.title}: ${data.text}`, 'alert');
+      addLog(`🌅 ${data.title}: ${data.text}`, 'alert');
     });
 
     return () => {
       socket.off('hostActionUpdate');
+      socket.off('gameStateUpdate');
+      socket.off('voteUpdate'); 
+      socket.off('announcement');
+      socket.off('dayAnnouncement');
     };
   }, [socket]);
 
-
-  // ------------------------------------------------------------------
   // HOST CONSOLE VIEW 
-  // ------------------------------------------------------------------
   if (isHostConsole) {
     const getName = (id) => players.find(p => p.playerId === id)?.name || "Unbekannt";
 
@@ -349,7 +421,7 @@ function App() {
                   onClick={() => handleHostAction("Neustart?", "Alles wird gelöscht.", () => socket.emit('resetGame'))}
                   className="btn-restart"
                   style={{ width: '100%', marginBottom: '10px' }}>
-                  🔄 Reset
+                  🔄 Neustart
                 </button>
                 <button
                   onClick={() => handleHostAction("KICK ALL?", "Alle fliegen raus.", () => socket.emit('kickAll'), '#ff0000')}
@@ -421,7 +493,7 @@ function App() {
               {gameLog.map((entry, i) => (
                 <div key={i} className={`log-entry type-${entry.type}`}>
                   <span className="log-time">[{entry.time}]</span>
-                  <span className="log-msg">{entry.msg}</span>
+                  <span className="log-msg" style={{ whiteSpace: 'pre-wrap' }}>{entry.msg}</span>
                 </div>
               ))}
             </div>
@@ -516,6 +588,10 @@ function App() {
           onClick={() => {
             const n = document.getElementById("nameInput").value;
             if (!n) return;
+
+            enterFullScreen(); 
+            requestWakeLock();
+
             localStorage.setItem("mafia_name", n);
             socket.emit('joinGame', { playerId: playerId.current, name: n });
           }}
@@ -548,13 +624,6 @@ function App() {
     <div className={`player-app-container ${isNight ? 'night-mode' : ''}`}>
       <button onClick={logout} className="btn-logout">❌</button>
 
-      {/* <div className="header-bar">
-
-        <h4>Mafia - Phase: {gamePhase}</h4>
-        <h4>{me.role !== 'Spectator' && <p>Du bist: <strong>{me.name}</strong></p>}</h4>
-
-      </div>*/}
-
       {gamePhase === 'LOBBY' && (
         <div style={{ marginBottom: 30 }}>
           <p className="pulse-text">Warte auf Spielstart...</p>
@@ -569,6 +638,8 @@ function App() {
           <button
             disabled={roleConfirmed}
             onClick={() => {
+              enterFullScreen(); 
+              requestWakeLock();
               socket.emit('playerReady', me.playerId);
               setRoleConfirmed(true);
             }}
@@ -580,7 +651,7 @@ function App() {
               color: '#57233a'
             }}
           >
-            {roleConfirmed ? "WARTE AUF ANDERE SPIELER..." : "WEITER"}
+            {roleConfirmed ? "Die Sonne geht runter..." : "Bereit für die erste Nacht!"}
           </button>
         </div>
       )}
@@ -602,13 +673,32 @@ function App() {
         </div>
       )}
 
+      {showGameOverOverlay && (
+        <div className={`game-over-overlay winner-${winner?.toLowerCase()}`}>
+            <h1 className="go-title">GAME OVER</h1>
+            <div className="go-winner-box">
+                {winner === 'MAFIA' ? (
+                    <>
+                        <span style={{fontSize: '4rem'}}>😈</span>
+                        <h2>DIE MAFIA GEWINNT</h2>
+                    </>
+                ) : (
+                    <>
+                        <span style={{fontSize: '4rem'}}>🥳</span>
+                        <h2>DIE BÜRGER GEWINNEN</h2>
+                    </>
+                )}
+            </div>
+        </div>
+      )}
+
       {gamePhase.startsWith('NIGHT') && <NightPhase socket={socket} phase={gamePhase} me={me} players={players} duration={phaseDuration}/>}
       {gamePhase.startsWith('DAY') && <DayPhase socket={socket} phase={gamePhase} me={me} players={players} tieCandidates={tieCandidates} currentVotes={currentVotes} />}
 
       {/* OVERLAY LOGIK */}
       {!me.isAlive && me.role !== 'Spectator' && gamePhase !== 'LOBBY' && gamePhase !== 'GAME_OVER' && (
         <div className="dead-overlay">
-          <h1>DU BIST TOT 💀</h1>
+          <h1>DU BIST TOT <n />💀</h1>
           <p>Warte auf das Ende des Spiels.</p>
         </div>
       )}
