@@ -22,6 +22,7 @@ function App() {
   const [settings, setSettings] = useState({});
   const [announcement, setAnnouncement] = useState("");
   const [tieCandidates, setTieCandidates] = useState([]);
+  const [discussionOpener, setDiscussionOpener] = useState(null);
   const [isHostConsole, setIsHostConsole] = useState(false);
   const [showRoles, setShowRoles] = useState(false);
   const [currentVotes, setCurrentVotes] = useState({});
@@ -194,12 +195,24 @@ function App() {
       socket.on('gameStateUpdate', (data) => {
         if (data.gamePhase) setGamePhase(data.gamePhase);
 
+        if (data.gamePhase === 'NIGHT_MAFIA') {
+             setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
+        }
+
         if (data.gamePhase === 'GAME_OVER' && data.winner) {
             setWinner(data.winner);
             setShowGameOverOverlay(true);            
             setTimeout(() => {
               setShowGameOverOverlay(false);
             }, 10000);
+        }
+
+        if (data.discussionOpener) {
+            setDiscussionOpener(data.discussionOpener);
+        }
+
+        if (data.gamePhase === 'NIGHT_TRANSITION' || data.gamePhase === 'LOBBY') {
+            setDiscussionOpener(null);
         }
 
         if (data.duration) {
@@ -268,6 +281,8 @@ function App() {
         setAnnouncement("");
         setCurrentVotes({});
         setRoleConfirmed(false);
+        setGameLog([]);
+        setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
 
         if (me && me.playerId !== 'host') {
           setMe(prev => ({ ...prev, role: "Noch nicht verteilt", isAlive: true }));
@@ -520,14 +535,14 @@ function App() {
                     {Object.keys(hostNightData.mafiaVotes).length === 0 && <li>Noch keine Stimmen...</li>}
                   </ul>
                 </div>
-                <div style={{ marginTop: 10 }}>
-                  <strong>Arzt:</strong> {hostNightData.docTarget ? `Schützt ${getName(hostNightData.docTarget)}` : "Schläft/Überlegt..."}
+                <div style={{ marginTop: 10 }}><br />
+                  <strong>Arzt:</strong><br /> -  {hostNightData.docTarget ? `Schützt ${getName(hostNightData.docTarget)}` : "Schläft/Überlegt..."}
                 </div>
-                <div>
-                  <strong>Detektiv:</strong> {hostNightData.detTarget ? `Prüft ${getName(hostNightData.detTarget)}` : "Schläft/Überlegt..."}
+                <div><br />
+                  <strong>Detektiv:</strong><br />- {hostNightData.detTarget ? `Prüft ${getName(hostNightData.detTarget)}` : "Schläft/Überlegt..."}
                 </div>
-                <div>
-                  <strong>Lady:</strong> {hostNightData.ladyTarget ? `Besucht ${getName(hostNightData.ladyTarget)}` : "Schläft/Überlegt..."}
+                <div><br />
+                  <strong>Lady:</strong><br />- {hostNightData.ladyTarget ? `Besucht ${getName(hostNightData.ladyTarget)}` : "Schläft/Überlegt..."}
                 </div>
               </div>
             )}
@@ -537,7 +552,6 @@ function App() {
               <div className="info-box day-box">
                 <h4>☀️ Tag Aktionen</h4>
                 <p>Stimmen abgegeben: {Object.keys(currentVotes).length} / {players.filter(p => p.isAlive && p.playerId !== 'host').length}</p>
-                {/* Wer führt gerade? Simple Berechnung für Host View */}
                 <div className="vote-tally">
                   {(() => {
                     const counts = {};
@@ -641,11 +655,8 @@ function App() {
 
   if (!me) return (
     <div className="login-container">
-
-      {/* 1. Überschrift */}
       <h1 className="mafia-title">MAFIA</h1>
 
-      {/* 2. Eingabegruppe (Nebeneinander) */}
       <div className="input-group">
         <input
           id="nameInput"
@@ -762,7 +773,7 @@ function App() {
       )}
 
       {gamePhase.startsWith('NIGHT') && <NightPhase socket={socket} phase={gamePhase} me={me} players={players} duration={phaseDuration}/>}
-      {gamePhase.startsWith('DAY') && <DayPhase socket={socket} phase={gamePhase} me={me} players={players} tieCandidates={tieCandidates} currentVotes={currentVotes} />}
+      {gamePhase.startsWith('DAY') && <DayPhase socket={socket} phase={gamePhase} me={me} players={players} tieCandidates={tieCandidates} currentVotes={currentVotes} opener={discussionOpener} />}
 
       {/* OVERLAY LOGIK */}
       {!me.isAlive && me.role !== 'Spectator' && gamePhase !== 'LOBBY' && gamePhase !== 'GAME_OVER' && (

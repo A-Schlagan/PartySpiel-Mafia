@@ -6,7 +6,7 @@ const cors = require('cors');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
-const DISCUSSION_TIME_MS = 10000; 
+const DISCUSSION_TIME_MS = 20000; 
 const NIGHT_PHASE_TIME_MS = 30000;
 
 app.use(cors());
@@ -146,7 +146,7 @@ io.on('connection', (socket) => {
         }
         
         if(gameTimer) clearTimeout(gameTimer);
-        gameTimer = setTimeout(() => nextNightPhase(), 6000);
+        gameTimer = setTimeout(() => nextNightPhase(), 8000);
     });
 
     socket.on('ladyAction', (targetId) => {
@@ -171,7 +171,7 @@ io.on('connection', (socket) => {
             io.emit('announcement', "Alle haben gewählt! Ergebnis in 5 Sekunden...");
             gameTimer = setTimeout(() => {
                 evaluateVoting();
-            }, 5000);
+            }, 7000);
         }
     });
 
@@ -214,10 +214,22 @@ io.on('connection', (socket) => {
 
     socket.on('kickAll', () => {
         if(gameTimer) clearTimeout(gameTimer);
+        io.emit('forceReload');
+
         players = {}; 
         gamePhase = "LOBBY";
-        io.emit('forceReload');
-    });    
+        nightActions = { mafiaVotes: {}, doctorTarget: null, detectiveTarget: null, ladyTarget: null, detectiveCheckDone: false };
+        dayVotes = {};
+        readyPlayers = [];
+        tieCandidates = [];
+
+        io.emit('updatePlayerList', []);
+        io.emit('gameReset', []); 
+
+        setTimeout(() => {
+            io.disconnectSockets();
+        }, 500); 
+    });   
 });
 
 function transitionToPhase(nextPhase, message, soundKey, delayMs) {
@@ -342,13 +354,18 @@ function startDay() {
     const counts = {};
     Object.values(nightActions.mafiaVotes).forEach(v => counts[v] = (counts[v] || 0) + 1);
     let maxVotes = 0;
+    Object.values(counts).forEach(c => { if(c > maxVotes) maxVotes = c; });
+
+    const candidates = Object.keys(counts).filter(id => counts[id] === maxVotes);
+
     let mafiaTargetId = null;
-    Object.keys(counts).forEach(id => {
-        if(counts[id] > maxVotes) {
-            maxVotes = counts[id];
-            mafiaTargetId = id;
-        }
-    });
+
+    if (candidates.length === 1) {
+        mafiaTargetId = candidates[0];
+    } else if (candidates.length > 1) {
+        logToHost(`🔪 MAFIA PATT: Uneinigkeit zwischen ${candidates.length} Zielen. Niemand wird angegriffen.`, 'warning');
+        mafiaTargetId = null; 
+    }
 
     let nightReport = "🌙 Nacht-Bericht:\n";
     if (mafiaTargetId) {
@@ -363,7 +380,7 @@ function startDay() {
     }
 
     let deadPlayers = [];
-    let message = "Es war eine ruhige Nacht. Niemand ist gestorben.";
+    let message = "Schüsse in der Nacht! Sind alle noch am Leben?";
 
     if (mafiaTargetId) {
         const mafiaVictim = players[mafiaTargetId];
@@ -377,21 +394,21 @@ function startDay() {
             
             if (nightActions.doctorTarget === ladyId) {
                 targetSaved = true; 
-                message = "Schüsse in der Nacht auf die Lady! Aber der Arzt hat sie gerettet.";
+                message = "Schüsse in der Nacht! Ist jemand gestorben?";
                 nightReport += `🛡️ ERGEBNIS: Lady (${mafiaVictim.name}) wurde vom Arzt GEHEILT!\n`; 
             } 
             else {
                 deadPlayers.push(ladyId);
-                message = `Die Lady (${players[ladyId].name}) wurde von der Mafia ermordet!`;
+                message = `Schüsse in der Nacht! Ist jemand gestorben?`;
                 nightReport += `💀 ERGEBNIS: Lady (${mafiaVictim.name}) wurde ERMORDET.\n`;
                 if (ladyVictimId && ladyVictimId !== ladyId && players[ladyVictimId] && players[ladyVictimId].isAlive) {
                     if (nightActions.doctorTarget === ladyVictimId) {
-                        message += ` Ihr Begleiter (${players[ladyVictimId].name}) wurde jedoch vom Arzt gerettet und überlebt!`;
+                        message += `Schüsse in der Nacht! Ist jemand gestorben?`;
                         nightReport += `🛡️ ERGEBNIS: Begleiter (${players[ladyVictimId].name}) wurde vom Arzt GEHEILT.\n`; 
                     } else {
                         deadPlayers.push(ladyVictimId);
-                        message = `TRAGÖDIE! Die Lady und ihr Begleiter ${players[ladyVictimId].name} wurden beide ermordet!`;
-                        nightReport += `💀💀 ERGEBNIS: Begleiter (${players[ladyVictimId].name}) starb aus Liebeskummer (Rolle: ${players[ladyVictimId].role}).\n`;
+                        message = `Schüsse in der Nacht! Ist jemand gestorben?`;
+                        nightReport += `💀💀 ERGEBNIS: Begleiter (${players[ladyVictimId].name}) starb auch (Rolle: ${players[ladyVictimId].role}).\n`;
                     }
                 }
             }
@@ -399,19 +416,19 @@ function startDay() {
         else {
             if (nightActions.doctorTarget === mafiaTargetId) {
                 targetSaved = true;
-                message = "Schüsse in der Nacht! Aber der Arzt war zur Stelle.";
-                nightReport += `🛡️ ERGEBNIS: ${mafiaVictim.name} wurde vom Arzt GEHEILT.\n`; // LOG
+                message = "Schüsse in der Nacht! Ist jemand gestorben?";
+                nightReport += `🛡️ ERGEBNIS: ${mafiaVictim.name} wurde vom Arzt GEHEILT.\n`; 
             } 
             else if (ladyVictimId === mafiaTargetId) {
                 targetSaved = true;
-                message = "Schüsse in der Nacht! Die Lady war wohl im Weg - das Opfer hat überlebt.";
-                nightReport += `💋 ERGEBNIS: ${mafiaVictim.name} überlebte durch Lady-Besuch.\n`; // LOG
+                message = "Schüsse in der Nacht! Ist jemand gestorben?";
+                nightReport += `💋 ERGEBNIS: ${mafiaVictim.name} überlebte durch Lady-Besuch.\n`; 
             }
 
             if (!targetSaved) {
                 deadPlayers.push(mafiaTargetId);
-                message = `Guten Morgen... aber nicht für ${players[mafiaTargetId].name}. Wurde von der Mafia ermordet!`;
-                nightReport += `💀 ERGEBNIS: ${mafiaVictim.name} wurde ERMORDET. (Rolle: ${mafiaVictim.role})\n`; // LOG
+                message = `Schüsse in der Nacht! Ist jemand gestorben?`;
+                nightReport += `💀 ERGEBNIS: ${mafiaVictim.name} wurde ERMORDET. (Rolle: ${mafiaVictim.role})\n`; 
             }
         }
     }
@@ -427,16 +444,24 @@ function startDay() {
         title: "🔆 Neuer Tag",
         text: message
     });
-    
-    checkWinCondition();
+    if(gameTimer) clearTimeout(gameTimer);
+    gameTimer = setTimeout(() => {
+        checkWinCondition();
 
-    if(gamePhase === "GAME_OVER") return;
+        if(gamePhase === "GAME_OVER") {
+            return;
+        }
+        const living = Object.values(players).filter(p => p.isAlive && p.playerId !== 'host' && p.role !== 'Spectator');
+        let openerName = "Niemand";
+        if (living.length > 0) {
+            const randomIndex = Math.floor(Math.random() * living.length);
+            openerName = living[randomIndex].name;
+        }
 
-    setTimeout(() => {
         gamePhase = "DAY_DISCUSS";
-        io.emit('gameStateUpdate', { gamePhase });
-        io.emit('announcement', `Diskussion startet!`);
-        
+        io.emit('gameStateUpdate', { gamePhase, discussionOpener: openerName });
+        io.emit('announcement', `Diskussion startet! ${openerName} beginnt!`);
+            
         if(gameTimer) clearTimeout(gameTimer);
         gameTimer = setTimeout(() => {
             startVotingPhase();
@@ -469,17 +494,20 @@ function evaluateVoting() {
             tieCandidates = candidates;
             gamePhase = "DAY_TIEBREAKER";
             dayVotes = {}; 
+            logToHost(`⚖️ GLEICHSTAND: Stichwahl zwischen ${candidates.length} Spielern (${max} Stimmen).`, 'warning');
             io.emit('gameStateUpdate', { gamePhase, tieCandidates });
             io.emit('voteUpdate', {});
             io.emit('announcement', `Gleichstand! Stichwahl zwischen ${candidates.length} Spielern.`);          
         } else {
             handleNoDeath("Niemand hat gewählt. Niemand stirbt.");
+            logToHost("⚖️ KEINE STIMMEN: Niemand stirbt.", 'info');
         }
     } 
     else if (gamePhase === "DAY_TIEBREAKER") {
         if (candidates.length === 1) {
             executeHanging(candidates[0], max);
         } else {
+            logToHost(`⚖️ STICHWAHL PATT: Erneut Gleichstand (${max} Stimmen). Niemand stirbt.`, 'info');
             handleNoDeath("Erneuter Gleichstand! Niemand stirbt heute.");
         }
     }
@@ -489,15 +517,20 @@ function executeHanging(victimId, votesCount) {
     if(!players[victimId]) return;
 
     const victim = players[victimId];
-    logToHost(`⚖️ TAGES-ERGEBNIS: ${victim.name} wurde gehängt. Er/Sie war: ${victim.role.toUpperCase()}!`, 'alert');
+    logToHost(`⚖️ TAGES-ERGEBNIS: ${victim.name} wurde gehängt. War: ${victim.role.toUpperCase()}!`, 'alert');
     
     players[victimId].isAlive = false;
     io.emit('announcement', `${players[victimId].name} wurde mit ${votesCount} Stimmen gehängt!`);
     io.emit('gameStateUpdate', { gamePhase: "DAY_ANNOUNCE", players: Object.values(players) });
-    checkWinCondition();
-    if(gamePhase !== "GAME_OVER") {
-        setTimeout(() => prepareNextRound(), 5000);
-    }
+
+    if(gameTimer) clearTimeout(gameTimer);
+    gameTimer = setTimeout(() => {
+        checkWinCondition();
+    
+        if(gamePhase !== "GAME_OVER") {
+            prepareNextRound(); 
+        }
+    }, 5000);
 }
 
 function handleNoDeath(message) {
@@ -530,7 +563,7 @@ function checkWinCondition() {
         winner="VILLAGE";
         winMessage = "🏆 SPIEL BEENDET: Das DORF hat gewonnen!";
         io.emit('announcement', "DORF GEWINNT!  🥳  Mafia ist tot.");
-    } else if (mafia > citizens && alive.length > 0) {
+    } else if (mafia >= citizens && alive.length > 0) {
         gamePhase = "GAME_OVER";
         winner = "MAFIA";
         winMessage = "🏆 SPIEL BEENDET: Die MAFIA hat gewonnen! 😈 (Überzahl erreicht)";

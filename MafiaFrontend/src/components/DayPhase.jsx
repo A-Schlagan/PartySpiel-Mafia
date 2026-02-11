@@ -1,7 +1,7 @@
 // components/DayPhase.jsx
 import React, { useState, useEffect } from 'react';
 
-export default function DayPhase({ socket, phase, me, players, tieCandidates, currentVotes }) {
+export default function DayPhase({ socket, phase, me, players, tieCandidates, currentVotes, opener }) {
     const [votedFor, setVotedFor] = useState(null);
 
     useEffect(() => {
@@ -14,13 +14,13 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
     };
 
     let candidates = players.filter(p => p.isAlive && p.playerId !== me.playerId);
-    
-    if(phase === 'DAY_TIEBREAKER') {
+
+    if (phase === 'DAY_TIEBREAKER') {
         candidates = candidates.filter(p => tieCandidates.includes(p.playerId));
     }
 
     const votesAgainstMe = Object.entries(currentVotes || {})
-        .filter(([_, targetId]) => targetId === me.playerId) 
+        .filter(([_, targetId]) => targetId === me.playerId)
         .map(([voterId]) => {
             const p = players.find(pl => pl.playerId === voterId);
             return p ? p.name : 'Unbekannt';
@@ -33,26 +33,46 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
                 const p = players.find(pl => pl.playerId === voterId);
                 return p ? p.name : 'Unbekannt';
             });
-        
+
         return voters;
     };
 
     return (
         <div className="day-phase-container">
             <h1>{phase === 'DAY_DISCUSS' ? 'DISKUSSION 🗣️' : 'ABSTIMMUNG 🗳️'}</h1>
-            
+
             {phase === 'DAY_ANNOUNCE' && <p>Bereitet euch für die Abstimmung...</p>}
-            
+
+            {phase === 'DAY_DISCUSS' && opener && (
+                <div style={{
+                    margin: '20px auto',
+                    padding: '15px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    color: '#333',
+                    borderRadius: '12px',
+                    border: '3px solid #AE4951',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                    maxWidth: '90%'
+                }}>
+                    <span style={{ fontSize: '1rem', textTransform: 'uppercase', color: '#555', display: 'block', marginBottom: '5px' }}>
+                        Das erste Wort geht heute an:
+                    </span>
+                    <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#AE4951', display: 'block', animation: 'pulse 2s infinite' }}>
+                        🎤 {opener}
+                    </span>
+                </div>
+            )}
+
             {(phase === 'DAY_VOTE' || phase === 'DAY_TIEBREAKER') && (
                 <div className="vote-section">
-                    
+
                     {phase === 'DAY_TIEBREAKER' ? (
                         <div className="tiebreaker-info">
                             <h3 className="tie-title">STICHWAHL!</h3>
                             <p>
-                                Gleichstand! Ihr müsst euch zwischen diesen Spielern entscheiden. 
-                                <br/>
-                                <small>Bei erneutem Gleichstand stirbt niemand.</small>
+                                Gleichstand! Ihr müsst euch zwischen diesen Spielern entscheiden.
+                                <br />
+                                <small>Bei erneutem Gleichstand stirbt niemand!</small>
                             </p>
                         </div>
                     ) : (
@@ -62,16 +82,16 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
                     <div className="candidates-grid">
                         {candidates.map(p => {
                             const voters = getVotersForCandidate(p.playerId);
-                            
+
                             return (
-                                <button key={p.playerId} 
+                                <button key={p.playerId}
                                     onClick={() => vote(p.playerId)}
-                                    disabled={votedFor !== null} 
+                                    disabled={votedFor !== null}
                                     className={`btn-vote ${votedFor === p.playerId ? 'selected' : ''}`}
                                     style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
                                 >
                                     <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>👉 {p.name}</span>
-                                    
+
                                     {voters.length > 0 && (
                                         <div style={{ fontSize: '0.8rem', color: '#154717', marginTop: '2px' }}>
                                             {voters.map(v => ` ${v}`).join(', ')}
@@ -83,23 +103,23 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
                     </div>
 
                     {/* --- Stimmen gegen MICH --- */}
-                    <div style={{ 
-                        marginTop: '10px', 
-                        padding: '10px', 
-                        backgroundColor: '#ffebee', 
-                        border: '1px solid #ef9a9a', 
+                    <div style={{
+                        marginTop: '10px',
+                        padding: '10px',
+                        backgroundColor: '#ffebee',
+                        border: '1px solid #ef9a9a',
                         borderRadius: '8px',
                         color: '#ae4951'
                     }}>
-                        <p style={{margin: 0, fontWeight: 'bold', color: '#161B1F'}}>Gegen DICH haben gestimmt:</p>
-                        <div style={{marginTop: '5px', fontSize: '1.1rem'}}>
-                            {votesAgainstMe.length > 0 
-                                ? `😒 ${votesAgainstMe.join(', ')}` 
-                                : <span style={{color: '#161B1F', fontStyle: 'italic'}}>😎 Noch niemand...</span>
+                        <p style={{ margin: 0, fontWeight: 'bold', color: '#161B1F' }}>Gegen DICH haben gestimmt:</p>
+                        <div style={{ marginTop: '5px', fontSize: '1.1rem' }}>
+                            {votesAgainstMe.length > 0
+                                ? `😒 ${votesAgainstMe.join(', ')}`
+                                : <span style={{ color: '#161B1F', fontStyle: 'italic' }}>😎 Noch niemand...</span>
                             }
                         </div>
                     </div>
-                    
+
                     {votedFor && <p className="vote-confirmed">Stimme abgegeben.</p>}
                 </div>
             )}
