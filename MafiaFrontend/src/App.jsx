@@ -30,6 +30,8 @@ function App() {
   const [hostNightData, setHostNightData] = useState({ mafiaVotes: {}, docTarget: null, detTarget: null });
   const [nightReady, setNightReady] = useState(false);
   const [phaseDuration, setPhaseDuration] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [totalTime, setTotalTime] = useState(0);
   const [winner, setWinner] = useState(null);
   const [showGameOverOverlay, setShowGameOverOverlay] = useState(false);
 
@@ -72,7 +74,6 @@ function App() {
   const playSound = (soundKey) => {
     const soundMap = {
       'morning': 'morning_rooster.wav',
-      'morning_rooster': 'morning_rooster.wav',
       'night_start_sound': 'night_start.mp3',
       'mafia_wake': 'mafia_wake.mp3',
       'mafia_sleep_sound': 'mafia_sleep.mp3',
@@ -140,6 +141,28 @@ function App() {
       setNightReady(false);
     }
   }, [gamePhase]);
+
+  useEffect(() => {
+    if (phaseDuration > 0) {
+        setTotalTime(phaseDuration / 1000);
+        setTimeLeft(phaseDuration / 1000);
+        
+        const interval = setInterval(() => {
+            setTimeLeft((prev) => {
+                if (prev <= 0.1) {
+                    clearInterval(interval);
+                    return 0;
+                }
+                return prev - 1; 
+            });
+        }, 1000);
+        
+        return () => clearInterval(interval);
+    } else {
+        setTimeLeft(0);
+        setTotalTime(0);
+    }
+  }, [phaseDuration, gamePhase]);
 
   useEffect(() => {
     if (socket) {
@@ -376,22 +399,68 @@ function App() {
   // HOST CONSOLE VIEW 
   if (isHostConsole) {
     const getName = (id) => players.find(p => p.playerId === id)?.name || "Unbekannt";
+    const progressPercent = totalTime > 0 ? (timeLeft / totalTime) * 100 : 0;
+
+    let timerColor = '#4caf50';
+    if (timeLeft < 10) timerColor = '#ff9800';
+    if (timeLeft < 5) timerColor = '#f44336';
 
     return (
       <div className="host-container">
 
         {/* HEADER: Phasen-Fortschrittsanzeige */}
-        <div className="host-header">
-          <h1>🕵️ SPIELLEITER ZENTRALE</h1>
-          <div className="phase-timeline">
-            {['LOBBY', 'NIGHT', 'DAY', 'VOTE'].map(step => (
-              <div key={step} className={`timeline-step ${gamePhase.includes(step) ? 'active' : ''}`}>
-                {step}
-              </div>
-            ))}
+        <div className="host-header" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: '20px' }}>
+          
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+             <h1 style={{fontSize: '1.2rem', margin: 0}}>🕵️ MASTER CONTROL</h1>
           </div>
-          <div className="current-phase-badge">
-            AKTUELL: {gamePhase}
+
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+             
+             <div className="current-phase-badge" style={{ marginBottom: '5px', width: '100%', textAlign: 'center' }}>
+                {gamePhase}
+             </div>
+
+             {totalTime > 0 ? (
+                 <div style={{ width: '100%', background: '#333', borderRadius: '4px', position: 'relative', height: '30px', overflow: 'hidden' }}>
+                    <div style={{
+                        width: `${progressPercent}%`,
+                        background: timerColor,
+                        height: '100%',
+                        transition: 'width 1s linear, background 1s ease'
+                    }}></div>
+                  
+                    <div style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        fontWeight: 'bold', textShadow: '0 0 2px black', color: 'white'
+                    }}>
+                        ⏱️ {Math.ceil(timeLeft)}s
+                    </div>
+                 </div>
+             ) : (
+                 <div style={{color: '#666', fontStyle: 'italic', fontSize: '0.9rem'}}>-- Keine Zeitbegrenzung --</div>
+             )}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+            {gamePhase !== 'LOBBY' && (
+                <button 
+                    onClick={() => socket.emit('forcePhaseNext')} 
+                    className="btn-emergency"
+                    style={{
+                        background: '#ff5722', 
+                        border: '1px solid #ffccbc',
+                        padding: '10px 15px',
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        fontSize: '1rem',
+                        cursor: 'pointer'
+                    }}
+                    title="Aktuelle Phase sofort beenden"
+                >
+                    ⏩ SKIP
+                </button>
+            )}
           </div>
         </div>
 
@@ -399,7 +468,7 @@ function App() {
 
           {/* SPALTE 1: Steuerung & Lobby */}
           <div className="host-panel host-controls">
-            <h3>🕹️ Steuerung</h3>
+            <h3>🕹️ Optionen</h3>
             {gamePhase === 'LOBBY' ? (
               <>
                 <Lobby socket={socket} players={players} isHost={true} />
@@ -409,12 +478,11 @@ function App() {
                 </div>
               </>
             ) : (
-              <div className="active-game-controls">
-                <button onClick={() => socket.emit('forcePhaseNext')} className="btn-emergency">
-                  ⏩ Phase überspringen
-                </button>
-              </div>
+              <div style={{padding: '10px', textAlign: 'center', color: '#888'}}>
+                    Spiel läuft... 
+                </div>
             )}   
+
               <div className="danger-zone">
                 <p style={{fontSize: '0.8rem', color: '#888', marginBottom: '5px'}}>Session Verwaltung:</p>
                 <button
@@ -423,6 +491,7 @@ function App() {
                   style={{ width: '100%', marginBottom: '10px' }}>
                   🔄 Neustart
                 </button>
+
                 <button
                   onClick={() => handleHostAction("KICK ALL?", "Alle fliegen raus.", () => socket.emit('kickAll'), '#ff0000')}
                   className="btn-kick"

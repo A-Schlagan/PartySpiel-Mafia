@@ -19,7 +19,8 @@ let nightActions = { mafiaVotes: {}, doctorTarget: null, detectiveTarget: null, 
 let dayVotes = {};
 let readyPlayers = []; 
 let tieCandidates = []; 
-let gameTimer = null; 
+let gameTimer = null;
+let nextPhaseTarget = null;
 
 function logToHost(message, type = 'info') {
     if (hostSocketId) {
@@ -99,7 +100,6 @@ io.on('connection', (socket) => {
         const mafiaPlayers = Object.values(players).filter(p => p.role === 'Mafia' && p.isAlive);
         mafiaPlayers.forEach(p => { io.to(p.socketId).emit('mafiaVoteUpdate', nightActions.mafiaVotes); });
 
-      //  const hostSocket = Object.values(players).find(p => p.playerId === 'host')?.socketId;
         if(hostSocketId) {
             io.to(hostSocketId).emit('hostActionUpdate', { 
                 type: 'MAFIA_VOTE', 
@@ -177,8 +177,19 @@ io.on('connection', (socket) => {
 
     socket.on('forcePhaseNext', () => {
         if(gameTimer) clearTimeout(gameTimer);
-        
-        if (gamePhase === 'DAY_ANNOUNCE' || gamePhase === 'DAY_DISCUSS') {
+    
+        if (gamePhase === "NIGHT_TRANSITION" && nextPhaseTarget) {
+            console.log("Überspringe Transition -> Gehe zu", nextPhaseTarget);
+            gamePhase = nextPhaseTarget;
+            nextPhaseTarget = null;
+            
+            if (gamePhase === "DAY_ANNOUNCE") {
+                startDay();
+            } else {
+                processPhaseStart(gamePhase);
+            }
+        } 
+        else if (gamePhase === 'DAY_ANNOUNCE' || gamePhase === 'DAY_DISCUSS') {
             startVotingPhase();
         } else if (gamePhase.startsWith('NIGHT')) {
             nextNightPhase();
@@ -211,6 +222,7 @@ io.on('connection', (socket) => {
 
 function transitionToPhase(nextPhase, message, soundKey, delayMs) {
     gamePhase = "NIGHT_TRANSITION";
+    nextPhaseTarget = nextPhase; 
     
     io.emit('gameStateUpdate', { gamePhase });
     io.emit('nightAnnouncement', { 
@@ -220,10 +232,11 @@ function transitionToPhase(nextPhase, message, soundKey, delayMs) {
 
     console.log(`Warte ${delayMs}ms vor Phase: ${nextPhase}`);
     if(gameTimer) clearTimeout(gameTimer);
+    
     gameTimer = setTimeout(() => {
         gamePhase = nextPhase;
+        nextPhaseTarget = null; 
         
-
         if (nextPhase === "DAY_ANNOUNCE") {
             startDay();
         } else {
@@ -347,9 +360,6 @@ function startDay() {
     if (settings.hasDoctor) {
         const docTarget = players[nightActions.doctorTarget];
         nightReport += `- Arzt: ${docTarget ? `Schützte ${docTarget.name}` : 'Untätig'}\n`;
-    }
-
-    if (settings.hasDetective && nightActions.detectiveCheckDone) {
     }
 
     let deadPlayers = [];
@@ -508,23 +518,29 @@ function prepareNextRound() {
 }
 
 function checkWinCondition() {
-    const alive = Object.values(players).filter(p => p.isAlive && p.role !== 'Spectator');
+    const alive = Object.values(players).filter(p => p.isAlive && p.playerId !== 'host' && p.role !== 'Spectator');
     const mafia = alive.filter(p => p.role === "Mafia").length;
     const citizens = alive.length - mafia;
 
     let winner = null;
+    let winMessage = "";
 
     if (mafia === 0 && alive.length > 0) { 
         gamePhase = "GAME_OVER";
         winner="VILLAGE";
+        winMessage = "🏆 SPIEL BEENDET: Das DORF hat gewonnen!";
         io.emit('announcement', "DORF GEWINNT!  🥳  Mafia ist tot.");
-    } else if (mafia >= citizens && alive.length > 0) {
+    } else if (mafia > citizens && alive.length > 0) {
         gamePhase = "GAME_OVER";
         winner = "MAFIA";
+        winMessage = "🏆 SPIEL BEENDET: Die MAFIA hat gewonnen! 😈 (Überzahl erreicht)";
         io.emit('announcement', "MAFIA GEWINNT!  😈  Überzahl erreicht.");
     }
     if(gamePhase === "GAME_OVER") {
         if(gameTimer) clearTimeout(gameTimer);
+        logToHost(winMessage, 'gamewin');
+        const survivorNames = alive.map(p => `${p.name} (${p.role})`).join(', ');
+        logToHost(`Überlebende: ${survivorNames}`, 'info');
         io.emit('gameStateUpdate', { gamePhase, winner });
         io.emit('playSound', 'game_over');
     }

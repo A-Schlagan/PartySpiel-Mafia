@@ -53,7 +53,6 @@ export default function NightPhase({ socket, phase, me, players, duration}) {
                     AUGEN ZU
                 </div>
                 {announcement && <h3 style={{color: 'yellow', marginTop: 20}}>{announcement}</h3>}
-                <style>{`@keyframes pulse { 0% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.5; transform: scale(1); } }`}</style>
             </div>
         );
     }
@@ -126,8 +125,7 @@ export default function NightPhase({ socket, phase, me, players, duration}) {
     }
 
     if (phase === 'NIGHT_LADY' && me.role === 'Lady' && me.isAlive) {
-        const targets = players.filter(p => p.isAlive && p.playerId !== me.playerId);   
-        console.log("Mögliche Ziele:", targets);                                     
+        const targets = players.filter(p => p.isAlive && p.playerId !== me.playerId);                                       
         return (
             <div>
                 <TimerBar duration={duration} />

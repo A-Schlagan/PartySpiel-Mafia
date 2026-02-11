@@ -13,7 +13,6 @@ export default function RoleCard({ role, name }) {
             className={`role-card ${isRevealed ? 'revealed' : ''}`}>
             
             <h2>DEINE ROLLE</h2>
-            <p style={{fontSize: 14}}></p>
             
             <div style={{fontSize: 15, fontWeight: 'bold', marginTop: 20}}>
                 {isRevealed ? role : "hier gedrückt halten!"}

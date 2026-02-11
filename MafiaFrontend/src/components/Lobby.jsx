@@ -14,7 +14,6 @@ export default function Lobby({ socket, players, isHost }) {
     if (isHost) {
         return (
             <div className="lobby-host-box">
-                <h3>⚙️ Einstellungen</h3>
                 <div className="lobby-controls">
                     <label>
                         Anzahl Mafia: 

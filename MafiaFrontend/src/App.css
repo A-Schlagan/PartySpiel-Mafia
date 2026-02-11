@@ -524,7 +524,6 @@ button:disabled {
 .btn-detective { background: var(--color-accent-blue); }
 .btn-lady { background: #9c27b0; border: 1px solid #7b1fa2; }
 
-/* Day Actions / Voting */
 .btn-vote {
   display: block;
   width: 100%;
@@ -550,7 +549,6 @@ button:disabled {
    6. NACHT MODUS & ANIMATIONEN
    ========================================= */
 
-/* Nacht-Modus Wrapper */
 .player-app-container.night-mode {
   background-color: var(--color-bg-dark); 
   color: #e0e0e0;            
