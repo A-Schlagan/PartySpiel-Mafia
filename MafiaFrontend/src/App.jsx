@@ -12,7 +12,7 @@ import NightPhase from './components/NightPhase';
 import DayPhase from './components/DayPhase';
 
 const SERVER_URL = "https://partyspiel-mafia.onrender.com";
-const CLIENT_URL = "";
+const CLIENT_URL = "party-spiel-mafia.vercel.app";
 
 function App() {
   const [socket, setSocket] = useState(null);
