@@ -337,7 +337,7 @@ button:disabled {
    ========================================= */
 
 .login-container {
-  background-image: url('images/background-main.png');
+  background-image: url('/images/background-main.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
