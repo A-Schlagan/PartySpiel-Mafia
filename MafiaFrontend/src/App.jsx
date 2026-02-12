@@ -11,8 +11,8 @@ import RoleCard from './components/RoleCard';
 import NightPhase from './components/NightPhase';
 import DayPhase from './components/DayPhase';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-const CLIENT_URL = import.meta.env.VITE_CLIENT_URL;
+const SERVER_URL = "https://partyspiel-mafia.onrender.com";
+const CLIENT_URL = "";
 
 function App() {
   const [socket, setSocket] = useState(null);

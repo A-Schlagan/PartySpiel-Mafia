@@ -5,7 +5,12 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, {
+    cors: {
+        origin: "*",             
+        methods: ["GET", "POST"] 
+    }
+});
 const DISCUSSION_TIME_MS = 20000; 
 const NIGHT_PHASE_TIME_MS = 30000;
 
@@ -579,4 +584,9 @@ function checkWinCondition() {
     }
 }
 
-server.listen(5000, '0.0.0.0', () => console.log("Server läuft auf Port 5000"));
+//server.listen(5000, '0.0.0.0', () => console.log("Server läuft auf Port 5000"));
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`Server läuft auf Port ${PORT}`);
+});
+
