@@ -1,4 +1,3 @@
-// components/Lobby.jsx
 import React, { useState } from 'react';
 
 export default function Lobby({ socket, players, isHost }) {
@@ -13,41 +12,51 @@ export default function Lobby({ socket, players, isHost }) {
 
     if (isHost) {
         return (
-            <div className="lobby-host-box">
-                <div className="lobby-controls">
-                    <label>
-                        Anzahl Mafia: 
-                        <input type="number" value={mafiaCount} onChange={e => setMafiaCount(Number(e.target.value))} style={{width: 50, marginLeft: 10}} min="1" />
-                    </label>
-                    
-                    <label>
-                        <input type="checkbox" checked={hasDoc} onChange={e => setHasDoc(e.target.checked)} /> Arzt dabei?
-                    </label>
-                    
-                    <label>
-                        <input type="checkbox" checked={hasDet} onChange={e => setHasDet(e.target.checked)} /> Detektiv dabei?
-                    </label>
-
-                    <label>
-                        <input type="checkbox" checked={hasLady} onChange={e => setHasLady(e.target.checked)} /> Lady dabei?
-                    </label>
-
-                    <button onClick={startGame} className="btn-start-game">
-                        ▶️ SPIEL STARTEN
-                    </button>
+            <div className="lobby-host-grid">
+                <div className="lobby-row">
+                    <label>Anzahl Mafia:</label>
+                    <input 
+                        type="number" 
+                        value={mafiaCount} 
+                        onChange={e => setMafiaCount(Number(e.target.value))} 
+                        min="1" 
+                        className="lobby-input-num"
+                    />
                 </div>
+                
+                <div className="lobby-toggles">
+                    <label className={`toggle-btn ${hasDoc ? 'active' : ''}`}>
+                        <input type="checkbox" checked={hasDoc} onChange={e => setHasDoc(e.target.checked)} hidden />
+                        {hasDoc ? '🟢' : '❌'} Arzt
+                    </label>
+                    
+                    <label className={`toggle-btn ${hasDet ? 'active' : ''}`}>
+                        <input type="checkbox" checked={hasDet} onChange={e => setHasDet(e.target.checked)} hidden />
+                        {hasDet ? '🟢' : '❌'} Detektiv
+                    </label>
+
+                    <label className={`toggle-btn ${hasLady ? 'active' : ''}`}>
+                        <input type="checkbox" checked={hasLady} onChange={e => setHasLady(e.target.checked)} hidden />
+                        {hasLady ? '🟢' : '❌'} Lady
+                    </label>
+                </div>
+
+                <button onClick={startGame} className="btn-start-game neon-pulse">
+                    ▶ SPIEL STARTEN
+                </button>
             </div>
         );
     }
 
     return (
-        <div>
+        <div className="player-list-container">
             <h2>Lobby</h2>
-            <p>{players.length} Spieler verbunden</p>
-            <ul style={{listStyle: 'none', padding: 0}}>
+            <p className="player-count">{players.length} Spieler verbunden</p>
+            <ul style={{ listStyle: 'none', padding: 0 }}>
                 {players.map(p => (
-                    <li key={p.playerId} className="player-list-item">
-                        {p.name} {p.role !== 'Spectator' && p.role !== 'Noch nicht verteilt' ? '✅' : ''}
+                    <li key={p.playerId} className="player-list-item" style={{borderBottom: '1px solid #333', padding: '10px 0', display: 'flex', justifyContent: 'space-between'}}>
+                        <span className="p-name" style={{fontWeight: 'bold', fontSize: '1.1rem'}}>{p.name}</span>
+                        {p.role !== 'Spectator' && p.role !== 'Noch nicht verteilt' && <span className="p-ready">✅</span>}
                     </li>
                 ))}
             </ul>

@@ -1,4 +1,3 @@
-//App.js
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import { v4 as uuidv4 } from 'uuid';
@@ -39,6 +38,7 @@ function App() {
   const playerId = useRef(localStorage.getItem("mafia_pid") || uuidv4());
   const wasAlive = useRef(true);
   const wakeLockRef = useRef(null);
+
   const isMobile = () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   };
@@ -82,12 +82,12 @@ function App() {
       'doctor_sleep_sound': 'doc_sleep.mp3',
       'detective_wake': 'detective_wake.mp3',
       'detective_sleep_sound': 'det_sleep.mp3',
-      'lady_wake_sound':'lady_wake.mp3',
-      'lady_sleep_sound':'lady_sleep.mp3',
+      'lady_wake_sound': 'lady_wake.mp3',
+      'lady_sleep_sound': 'lady_sleep.mp3',
       'game_over': 'game_over.mp3'
     };
 
-    const fileName = soundMap[soundKey] || `${soundKey}.mp3`; 
+    const fileName = soundMap[soundKey] || `${soundKey}.mp3`;
     const audio = new Audio(`/sounds/${fileName}`);
 
     audio.play().catch(e => console.log("Audio Autoplay blockiert (Browser Policy):", e));
@@ -143,27 +143,29 @@ function App() {
     }
   }, [gamePhase]);
 
+  // Timer Logik
   useEffect(() => {
     if (phaseDuration > 0) {
-        setTotalTime(phaseDuration / 1000);
-        setTimeLeft(phaseDuration / 1000);
-        
-        const interval = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev <= 0.1) {
-                    clearInterval(interval);
-                    return 0;
-                }
-                return prev - 1; 
-            });
-        }, 1000);
-        
-        return () => clearInterval(interval);
+      setTotalTime(phaseDuration / 1000);
+      setTimeLeft(phaseDuration / 1000);
+
+      const interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 0.1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
     } else {
-        setTimeLeft(0);
-        setTotalTime(0);
+      setTimeLeft(0);
+      setTotalTime(0);
     }
   }, [phaseDuration, gamePhase]);
+
 
   useEffect(() => {
     if (socket) {
@@ -174,12 +176,34 @@ function App() {
       });
 
       socket.on('recoverState', (data) => {
-        setMe(data.me);
+
+        let recoveredMe = data.me;
+
+        if (data.myActionTarget) {
+          recoveredMe = { ...recoveredMe, lastAction: data.myActionTarget };
+        }
+
+        setMe(recoveredMe);
         setPlayers(data.allPlayers);
         setGamePhase(data.gamePhase);
         setSettings(data.settings);
         if (data.tieCandidates) setTieCandidates(data.tieCandidates);
         if (data.dayVotes) setCurrentVotes(data.dayVotes);
+        if (data.hostNightData) {
+          setHostNightData(prev => ({
+            ...prev,
+            mafiaVotes: data.hostNightData.mafiaVotes || {},
+            docTarget: data.hostNightData.doctorTarget,
+            detTarget: data.hostNightData.detectiveTarget,
+            ladyTarget: data.hostNightData.ladyTarget
+          }));
+        }
+
+        if (data.phaseEndTime) {
+          const now = Date.now();
+          const remaining = data.phaseEndTime - now;
+          setPhaseDuration(remaining > 0 ? remaining : 0);
+        }
       });
 
       socket.on('voteUpdate', (votes) => {
@@ -196,30 +220,25 @@ function App() {
         if (data.gamePhase) setGamePhase(data.gamePhase);
 
         if (data.gamePhase === 'NIGHT_MAFIA') {
-             setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
+          setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
         }
 
         if (data.gamePhase === 'GAME_OVER' && data.winner) {
-            setWinner(data.winner);
-            setShowGameOverOverlay(true);            
-            setTimeout(() => {
-              setShowGameOverOverlay(false);
-            }, 10000);
+          setWinner(data.winner);
+          setShowGameOverOverlay(true);
+          setTimeout(() => {
+            setShowGameOverOverlay(false);
+          }, 10000);
         }
 
         if (data.discussionOpener) {
-            setDiscussionOpener(data.discussionOpener);
+          setDiscussionOpener(data.discussionOpener);
         }
 
         if (data.gamePhase === 'NIGHT_TRANSITION' || data.gamePhase === 'LOBBY') {
-            setDiscussionOpener(null);
+          setDiscussionOpener(null);
         }
 
-        if (data.duration) {
-             setPhaseDuration(data.duration);
-        } else {
-             setPhaseDuration(0);
-        }
         if (data.players) {
           setPlayers(data.players);
           const myServerState = data.players.find(p => p.playerId === playerId.current);
@@ -228,6 +247,17 @@ function App() {
           }
         }
         if (data.tieCandidates) setTieCandidates(data.tieCandidates);
+
+
+        if (data.phaseEndTime) {
+          const now = Date.now();
+          const remaining = data.phaseEndTime - now;
+          setPhaseDuration(remaining > 0 ? remaining : 0);
+        } else if (data.duration) {
+          setPhaseDuration(data.duration);
+        } else {
+          setPhaseDuration(0);
+        }
       });
 
       socket.on('announcement', (msg) => {
@@ -235,7 +265,6 @@ function App() {
       });
 
       socket.on('nightAnnouncement', ({ message, sound }) => {
-        setAnnouncement(message);
         if (sound) playSound(sound);
       });
 
@@ -285,7 +314,7 @@ function App() {
         setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
 
         if (me && me.playerId !== 'host') {
-          setMe(prev => ({ ...prev, role: "Noch nicht verteilt", isAlive: true }));
+          setMe(prev => ({ ...prev, role: "Noch nicht verteilt", isAlive: true, lastAction: null }));
         }
 
         if (!isHostConsole) {
@@ -300,8 +329,8 @@ function App() {
       });
 
       socket.on('serverLog', ({ msg, type }) => {
-          const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-          setGameLog(prev => [{ time, msg, type }, ...prev]);
+        const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        setGameLog(prev => [{ time, msg, type }, ...prev]);
       });
 
       socket.on('forceReload', () => {
@@ -326,12 +355,13 @@ function App() {
         socket.off('gameReset');
         socket.off('serverLog');
         socket.off('forceReload');
+        socket.off('hostActionUpdate');
       }
     };
 
   }, [socket, isHostConsole, me]);
 
-  // Chronik & Live Status
+  // Chronik & Live Status Updates
   useEffect(() => {
     if (!socket) return;
 
@@ -341,11 +371,11 @@ function App() {
     };
 
     socket.on('hostActionUpdate', (update) => {
-      console.log("Host Update empfangen:", update); 
+      console.log("Host Update empfangen:", update);
 
       if (update.type === 'MAFIA_VOTE') {
         setHostNightData(prev => ({ ...prev, mafiaVotes: update.data }));
-        addLog("Mafia hat abgestimmt/geändert.", 'action'); 
+        addLog("Mafia hat abgestimmt/geändert.", 'action');
       }
       if (update.type === 'DOC_ACTION') {
         setHostNightData(prev => ({ ...prev, docTarget: update.target }));
@@ -361,53 +391,8 @@ function App() {
       }
     });
 
-    socket.on('gameStateUpdate', (data) => {
-      if (data.gamePhase) {
-        const phaseNames = {
-            'LOBBY': 'Warteraum',
-            'ROLE_REVEAL': 'Rollenverteilung',
-            'NIGHT_TRANSITION': 'Nacht bricht ein...',
-            'NIGHT_MAFIA': 'Nacht: Mafia Phase',
-            'NIGHT_DOCTOR': 'Nacht: Arzt Phase',
-            'NIGHT_DETECTIVE': 'Nacht: Detektiv Phase',
-            'NIGHT_LADY': 'Nacht: Lady Phase',
-            'DAY_ANNOUNCE': 'Der Morgen graut',
-            'DAY_DISCUSS': 'Tag: Diskussion',
-            'DAY_VOTE': 'Tag: Abstimmung',
-            'DAY_TIEBREAKER': 'Tag: Stichwahl',
-            'GAME_OVER': 'Spielende'
-        };
-
-        if (data.gamePhase === 'NIGHT_TRANSITION' || data.gamePhase === 'DAY_ANNOUNCE') {
-             setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
-        }
-        
-        const niceName = phaseNames[data.gamePhase] || data.gamePhase;
-        addLog(`Phasenwechsel: ${niceName}`, 'phase');
-      }
-    });
-
-    socket.on('voteUpdate', (votes) => {
-        const count = Object.keys(votes).length;
-        if (count > 0) {
-          addLog(`Ein neuer Vote ist eingegangen. (${count} Stimmen total)`, 'info');
-        }
-    });
-
-    socket.on('announcement', (msg) => {
-      addLog(`📢 ${msg}`, 'alert');
-    });
-
-    socket.on('dayAnnouncement', (data) => {
-      addLog(`🌅 ${data.title}: ${data.text}`, 'alert');
-    });
-
     return () => {
       socket.off('hostActionUpdate');
-      socket.off('gameStateUpdate');
-      socket.off('voteUpdate'); 
-      socket.off('announcement');
-      socket.off('dayAnnouncement');
     };
   }, [socket]);
 
@@ -416,65 +401,58 @@ function App() {
     const getName = (id) => players.find(p => p.playerId === id)?.name || "Unbekannt";
     const progressPercent = totalTime > 0 ? (timeLeft / totalTime) * 100 : 0;
 
-    let timerColor = '#4caf50';
-    if (timeLeft < 10) timerColor = '#ff9800';
-    if (timeLeft < 5) timerColor = '#f44336';
-
     return (
       <div className="host-container">
 
-        {/* HEADER: Phasen-Fortschrittsanzeige */}
+        {/* HEADER */}
         <div className="host-header" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: '20px' }}>
-          
+
           <div style={{ display: 'flex', alignItems: 'center' }}>
-             <h1 style={{fontSize: '1.2rem', margin: 0}}>🕵️ MASTER CONTROL</h1>
+            <h1 style={{ fontSize: '1.2rem', margin: 0 }}>🕵️ MASTER CONTROL</h1>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-             
-             <div className="current-phase-badge" style={{ marginBottom: '5px', width: '100%', textAlign: 'center' }}>
-                {gamePhase}
-             </div>
 
-             {totalTime > 0 ? (
-                 <div style={{ width: '100%', background: '#333', borderRadius: '4px', position: 'relative', height: '30px', overflow: 'hidden' }}>
-                    <div style={{
-                        width: `${progressPercent}%`,
-                        background: timerColor,
-                        height: '100%',
-                        transition: 'width 1s linear, background 1s ease'
-                    }}></div>
-                  
-                    <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        display: 'flex', justifyContent: 'center', alignItems: 'center',
-                        fontWeight: 'bold', textShadow: '0 0 2px black', color: 'white'
-                    }}>
-                        ⏱️ {Math.ceil(timeLeft)}s
-                    </div>
-                 </div>
-             ) : (
-                 <div style={{color: '#666', fontStyle: 'italic', fontSize: '0.9rem'}}>-- Keine Zeitbegrenzung --</div>
-             )}
+            <div className="current-phase-badge" style={{ marginBottom: '5px', width: '100%', textAlign: 'center' }}>
+              {gamePhase}
+            </div>
+
+            {totalTime > 0 ? (
+              <div style={{ width: '100%', background: '#333', borderRadius: '4px', position: 'relative', height: '30px', overflow: 'hidden' }}>
+                <div className="host-timer-fill" style={{
+                  width: `${progressPercent}%`,
+                }}></div>
+
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                  display: 'flex', justifyContent: 'center', alignItems: 'center',
+                  fontWeight: 'bold', textShadow: '0 0 2px black', color: 'white'
+                }}>
+                  ⏱️ {Math.ceil(timeLeft)}s
+                </div>
+              </div>
+            ) : (
+              <div style={{ color: '#666', fontStyle: 'italic', fontSize: '0.9rem' }}>-- Keine Zeitbegrenzung --</div>
+            )}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
             {gamePhase !== 'LOBBY' && (
-                <button 
-                    onClick={() => socket.emit('forcePhaseNext')} 
-                    className="btn-emergency"
-                    style={{
-                        background: '#ff5722', 
-                        border: '1px solid #ffccbc',
-                        padding: '10px 15px',
-                        display: 'flex', alignItems: 'center', gap: '5px',
-                        fontSize: '1rem',
-                        cursor: 'pointer'
-                    }}
-                    title="Aktuelle Phase sofort beenden"
-                >
-                    ⏩ SKIP
-                </button>
+              <button
+                onClick={() => socket.emit('forcePhaseNext')}
+                className="btn-emergency"
+                style={{
+                  background: '#ff5722',
+                  border: '1px solid #ffccbc',
+                  padding: '10px 15px',
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  fontSize: '1rem',
+                  cursor: 'pointer'
+                }}
+                title="Aktuelle Phase sofort beenden"
+              >
+                ⏩ SKIP
+              </button>
             )}
           </div>
         </div>
@@ -487,33 +465,35 @@ function App() {
             {gamePhase === 'LOBBY' ? (
               <>
                 <Lobby socket={socket} players={players} isHost={true} />
-                <div className="qr-mini">
-                  <QRCode value={CLIENT_URL} size={150} /><br />
-                  <small>{CLIENT_URL}</small>
+                <div className="qr-card">
+                  <QRCode value={CLIENT_URL} size={150} />
+                  <div className="qr-link">{CLIENT_URL}</div>
                 </div>
               </>
             ) : (
-              <div style={{padding: '10px', textAlign: 'center', color: '#888'}}>
-                    Spiel läuft... 
-                </div>
-            )}   
+              <div style={{ padding: '10px', textAlign: 'center', color: '#888' }}>
+                Spiel läuft...
+              </div>
+            )}
 
-              <div className="danger-zone">
-                <p style={{fontSize: '0.8rem', color: '#888', marginBottom: '5px'}}>Session Verwaltung:</p>
+            <div className="danger-zone">
+              <p>Session Verwaltung:</p>
+              <div className="danger-buttons">
                 <button
                   onClick={() => handleHostAction("Neustart?", "Alles wird gelöscht.", () => socket.emit('resetGame'))}
                   className="btn-restart"
-                  style={{ width: '100%', marginBottom: '10px' }}>
+                >
                   🔄 Neustart
                 </button>
 
                 <button
                   onClick={() => handleHostAction("KICK ALL?", "Alle fliegen raus.", () => socket.emit('kickAll'), '#ff0000')}
                   className="btn-kick"
-                  style={{ width: '100%' }}>
+                >
                   ⚠️ Kick All
                 </button>
-              </div>            
+              </div>
+            </div>
           </div>
 
           {/* SPALTE 2: Live Informationen (Nacht & Tag) */}
@@ -582,26 +562,26 @@ function App() {
             </div>
           </div>
 
-          {/* SPALTE 4: Spieler Liste (Kompakt) */}
+          {/* SPALTE 4: Spieler Liste */}
           <div className="host-panel host-players">
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #555', marginBottom: '10px', paddingBottom: '5px'}}>
-                <h3 style={{margin: 0, border: 'none', padding: 0}}>👥 Spieler ({players.length})</h3>
-                <button 
-                    onClick={() => setShowRoles(!showRoles)} 
-                    style={{
-                        background: 'transparent', 
-                        border: '1px solid #666', 
-                        color: showRoles ? '#ff4444' : '#888',
-                        padding: '2px 8px',
-                        fontSize: '0.8rem',
-                        cursor: 'pointer'
-                    }}
-                    title="Rollen anzeigen/verstecken"
-                >
-                    {showRoles ? "🙈 Verstecken" : "👁️ Anzeigen"}
-                </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #555', marginBottom: '10px', paddingBottom: '5px' }}>
+              <h3 style={{ margin: 0, border: 'none', padding: 0 }}>👥 Spieler ({players.length})</h3>
+              <button
+                onClick={() => setShowRoles(!showRoles)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #666',
+                  color: showRoles ? '#ff4444' : '#888',
+                  padding: '2px 8px',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer'
+                }}
+                title="Rollen anzeigen/verstecken"
+              >
+                {showRoles ? "🙈 Verstecken" : "👁️ Anzeigen"}
+              </button>
             </div>
-            
+
             <div className="player-list-scroll">
               <table className="player-table">
                 <thead>
@@ -615,12 +595,12 @@ function App() {
                   {players.map(p => {
                     const hasVoted = gamePhase.startsWith('DAY') && currentVotes[p.playerId];
                     const isMafiaVoter = gamePhase === 'NIGHT_MAFIA' && hostNightData.mafiaVotes[p.playerId];
-                    
+
                     let roleDisplay = null;
                     if (showRoles) {
-                        roleDisplay = <span className={`role-badge badge-${p.role.toLowerCase()}`}>{p.role}</span>;
+                      roleDisplay = <span className={`role-badge badge-${p.role.toLowerCase()}`}>{p.role}</span>;
                     } else {
-                        roleDisplay = <span className="role-badge badge-spoiler">???</span>;
+                      roleDisplay = <span className="role-badge badge-spoiler">???</span>;
                     }
 
                     return (
@@ -649,9 +629,6 @@ function App() {
     );
   }
 
-  // ------------------------------------------------------------------
-  // REGULAR PLAYER VIEW (Handy)
-  // ------------------------------------------------------------------
 
   if (!me) return (
     <div className="login-container">
@@ -669,7 +646,7 @@ function App() {
             const n = document.getElementById("nameInput").value;
             if (!n) return;
 
-            enterFullScreen(); 
+            enterFullScreen();
             requestWakeLock();
 
             localStorage.setItem("mafia_name", n);
@@ -680,7 +657,7 @@ function App() {
         </button>
       </div>
 
-      {/* 3. Host Bereich (Ganz unten) */}
+      {/* 3. Host Bereich  */}
       <div className="host-footer">
         <button
           className="btn-host-login"
@@ -718,7 +695,7 @@ function App() {
           <button
             disabled={roleConfirmed}
             onClick={() => {
-              enterFullScreen(); 
+              enterFullScreen();
               requestWakeLock();
               socket.emit('playerReady', me.playerId);
               setRoleConfirmed(true);
@@ -755,30 +732,30 @@ function App() {
 
       {showGameOverOverlay && (
         <div className={`game-over-overlay winner-${winner?.toLowerCase()}`}>
-            <h1 className="go-title">GAME OVER</h1>
-            <div className="go-winner-box">
-                {winner === 'MAFIA' ? (
-                    <>
-                        <span style={{fontSize: '4rem'}}>😈</span>
-                        <h2>DIE MAFIA GEWINNT</h2>
-                    </>
-                ) : (
-                    <>
-                        <span style={{fontSize: '4rem'}}>🥳</span>
-                        <h2>DIE BÜRGER GEWINNEN</h2>
-                    </>
-                )}
-            </div>
+          <h1 className="go-title">GAME OVER</h1>
+          <div className="go-winner-box">
+            {winner === 'MAFIA' ? (
+              <>
+                <span style={{ fontSize: '4rem' }}>😈</span>
+                <h2>DIE MAFIA GEWINNT</h2>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: '4rem' }}>🥳</span>
+                <h2>DIE BÜRGER GEWINNEN</h2>
+              </>
+            )}
+          </div>
         </div>
       )}
 
-      {gamePhase.startsWith('NIGHT') && <NightPhase socket={socket} phase={gamePhase} me={me} players={players} duration={phaseDuration}/>}
+      {gamePhase.startsWith('NIGHT') && <NightPhase socket={socket} phase={gamePhase} me={me} players={players} duration={phaseDuration} />}
       {gamePhase.startsWith('DAY') && <DayPhase socket={socket} phase={gamePhase} me={me} players={players} tieCandidates={tieCandidates} currentVotes={currentVotes} opener={discussionOpener} />}
 
-      {/* OVERLAY LOGIK */}
+      {/* OVERLAY */}
       {!me.isAlive && me.role !== 'Spectator' && gamePhase !== 'LOBBY' && gamePhase !== 'GAME_OVER' && (
         <div className="dead-overlay">
-          <h1>DU BIST TOT <n />💀</h1>
+          <h1>DU BIST TOT <br />💀</h1>
           <p>Warte auf das Ende des Spiels.</p>
         </div>
       )}
