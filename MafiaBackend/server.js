@@ -642,6 +642,21 @@ function checkWinCondition() {
     }
 }
 
+// Fängt Fehler ab, damit der Server nicht abstürzt!
+process.on('uncaughtException', (err) => {
+    console.error('💥 KRITISCHER FEHLER (Server läuft weiter):', err);
+    if (hostSocketId) {
+        io.to(hostSocketId).emit('serverLog', { 
+            msg: `SERVER FEHLER: ${err.message}`, 
+            type: 'error' 
+        });
+    }
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 Unhandled Rejection:', reason);
+});
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
     console.log(`Server läuft auf Port ${PORT}`);
