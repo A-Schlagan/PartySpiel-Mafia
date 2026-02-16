@@ -43,7 +43,7 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
                 if (phase === 'NIGHT_DOCTOR') socket.emit('doctorAction', targetId);
                 if (phase === 'NIGHT_DETECTIVE') socket.emit('detectiveAction', targetId);
                 if (phase === 'NIGHT_LADY') socket.emit('ladyAction', targetId);
-            }, 1000); 
+            }, 2000); 
         }
     };
 

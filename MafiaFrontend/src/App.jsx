@@ -172,12 +172,12 @@ function App() {
 
       socket.on('connect', () => {
         console.log("Verbunden mit Server. ID:", socket.id);
-        
+
         const name = localStorage.getItem("mafia_name");
         if (name) socket.emit('joinGame', { playerId: playerId.current, name });
         if (isHostConsole) {
-            console.log("Re-Registering as Host...");
-            socket.emit('registerHost');
+          console.log("Re-Registering as Host...");
+          socket.emit('registerHost');
         }
       });
 
@@ -339,6 +339,32 @@ function App() {
         setGameLog(prev => [{ time, msg, type }, ...prev]);
       });
 
+      socket.on('hostActionUpdate', (update) => {
+        console.log("Host Update empfangen:", update);
+        const addLog = (msg, type = 'info') => {
+          const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          setGameLog(prev => [{ time, msg, type }, ...prev]);
+        };
+
+        if (update.type === 'MAFIA_VOTE') {
+          setHostNightData(prev => ({ ...prev, mafiaVotes: update.data }));
+          addLog("Mafia hat abgestimmt/geändert.", 'action');
+        }
+        if (update.type === 'DOC_ACTION') {
+          setHostNightData(prev => ({ ...prev, docTarget: update.target }));
+          addLog("👨‍⚕️ Der Arzt hat sich entschieden.", 'success');
+        }
+        if (update.type === 'DET_ACTION') {
+          setHostNightData(prev => ({ ...prev, detTarget: update.target }));
+          addLog("🕵️ Der Detektiv prüft jemanden.", 'info');
+        }
+        if (update.type === 'LADY_ACTION') {
+          setHostNightData(prev => ({ ...prev, ladyTarget: update.target }));
+          addLog("💋 Die Lady ist unterwegs.", 'warning');
+        }
+      });
+
+
       socket.on('forceReload', () => {
         localStorage.clear();
         window.location.reload();
@@ -367,46 +393,13 @@ function App() {
 
   }, [socket, isHostConsole, me]);
 
-  // Chronik & Live Status Updates
-  useEffect(() => {
-    if (!socket) return;
-
-    const addLog = (msg, type = 'info') => {
-      const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      setGameLog(prev => [{ time, msg, type }, ...prev]);
-    };
-
-    socket.on('hostActionUpdate', (update) => {
-      console.log("Host Update empfangen:", update);
-
-      if (update.type === 'MAFIA_VOTE') {
-        setHostNightData(prev => ({ ...prev, mafiaVotes: update.data }));
-        addLog("Mafia hat abgestimmt/geändert.", 'action');
-      }
-      if (update.type === 'DOC_ACTION') {
-        setHostNightData(prev => ({ ...prev, docTarget: update.target }));
-        addLog("👨‍⚕️ Der Arzt hat sich entschieden.", 'success');
-      }
-      if (update.type === 'DET_ACTION') {
-        setHostNightData(prev => ({ ...prev, detTarget: update.target }));
-        addLog("🕵️ Der Detektiv prüft jemanden.", 'info');
-      }
-      if (update.type === 'LADY_ACTION') {
-        setHostNightData(prev => ({ ...prev, ladyTarget: update.target }));
-        addLog("💋 Die Lady ist unterwegs.", 'warning');
-      }
-    });
-
-    return () => {
-      socket.off('hostActionUpdate');
-    };
-  }, [socket]);
 
   // HOST CONSOLE VIEW 
   if (isHostConsole) {
     const getName = (id) => {
-      if(!id) return "Unbekannt";
-      return players.find(p => p.playerId === id)?.name || "Unbekannt";}
+      if (!id) return "Unbekannt";
+      return players.find(p => p.playerId === id)?.name || "Unbekannt";
+    }
     const progressPercent = totalTime > 0 ? (timeLeft / totalTime) * 100 : 0;
 
     return (
