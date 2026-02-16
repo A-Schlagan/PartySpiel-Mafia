@@ -463,7 +463,8 @@ function App() {
           {/* SPALTE 1: Steuerung & Lobby */}
           <div className="host-panel host-controls">
             <h3>🕹️ Optionen</h3>
-            {gamePhase === 'LOBBY' ? (
+            {/* FALL 1: LOBBY */}
+            {gamePhase === 'LOBBY' && (
               <>
                 <Lobby socket={socket} players={players} isHost={true} />
                 <div className="qr-card">
@@ -471,9 +472,29 @@ function App() {
                   <div className="qr-link">{CLIENT_URL}</div>
                 </div>
               </>
-            ) : (
+            )}
+
+            {/* FALL 2: GAME OVER  */}
+            {gamePhase === 'GAME_OVER' && (
+              <div style={{ textAlign: 'center', padding: '20px', background: '#444', borderRadius: '8px', marginBottom: '20px' }}>
+                <h2 style={{ color: '#fff', margin: '0 0 10px 0' }}>Spiel ist vorbei!</h2>
+                <p style={{ color: '#ccc' }}>Alle Spieler bleiben verbunden.</p>
+
+                <button
+                  onClick={() => handleHostAction("Neues Spiel?", "Alle Rollen werden neu gemischt.", () => socket.emit('resetGame'))}
+                  className="btn-big-action neon-pulse"
+                  style={{ width: '100%', background: '#28a745', fontSize: '1.2rem', padding: '15px' }}
+                >
+                  🔄 Neues Spiel starten
+                </button>
+              </div>
+            )}
+
+            {/* FALL 3: SPIEL LÄUFT */}
+            {gamePhase !== 'LOBBY' && gamePhase !== 'GAME_OVER' && (
               <div style={{ padding: '10px', textAlign: 'center', color: '#888' }}>
-                Spiel läuft...
+                Spiel läuft... <br />
+                <small>Nutze "Skip" oder "Kick" bei Problemen.</small>
               </div>
             )}
 

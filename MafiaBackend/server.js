@@ -248,15 +248,17 @@ io.on('connection', (socket) => {
     socket.on('resetGame', () => {
         if (gameTimer) clearTimeout(gameTimer);
         gamePhase = "LOBBY";
-        nightActions = { mafiaVotes: {}, doctorTarget: null, detectiveTarget: null };
+        nightActions = { mafiaVotes: {}, doctorTarget: null, detectiveTarget: null, ladyTarget: null, detectiveCheckDone: false };
         dayVotes = {};
         readyPlayers = [];
         tieCandidates = [];
         phaseEndTime = 0;
+        nextPhaseTarget = null;
 
         Object.keys(players).forEach(pid => {
             players[pid].role = "Noch nicht verteilt";
             players[pid].isAlive = true;
+            players[pid].isOnline = true;
         });
 
         io.emit('gameReset', Object.values(players));
