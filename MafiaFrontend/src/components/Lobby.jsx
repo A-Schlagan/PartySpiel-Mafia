@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 
 export default function Lobby({ socket, players, isHost }) {
     const [mafiaCount, setMafiaCount] = useState(1);
-    const [hasDoc, setHasDoc] = useState(false);
-    const [hasDet, setHasDet] = useState(false);
+    const [hasDoc, setHasDoc] = useState(true);
+    const [hasDet, setHasDet] = useState(true);
     const [hasLady, setHasLady] = useState(false);
 
     const startGame = () => {
@@ -27,17 +27,17 @@ export default function Lobby({ socket, players, isHost }) {
                 <div className="lobby-toggles">
                     <label className={`toggle-btn ${hasDoc ? 'active' : ''}`}>
                         <input type="checkbox" checked={hasDoc} onChange={e => setHasDoc(e.target.checked)} hidden />
-                        {hasDoc ? '🟢' : '❌'} Arzt
+                        {hasDoc ? '🟢' : '?'} Arzt
                     </label>
                     
                     <label className={`toggle-btn ${hasDet ? 'active' : ''}`}>
                         <input type="checkbox" checked={hasDet} onChange={e => setHasDet(e.target.checked)} hidden />
-                        {hasDet ? '🟢' : '❌'} Detektiv
+                        {hasDet ? '🟢' : '?'} Detektiv
                     </label>
 
                     <label className={`toggle-btn ${hasLady ? 'active' : ''}`}>
                         <input type="checkbox" checked={hasLady} onChange={e => setHasLady(e.target.checked)} hidden />
-                        {hasLady ? '🟢' : '❌'} Lady
+                        {hasLady ? '🟢' : '?'} Lady
                     </label>
                 </div>
 

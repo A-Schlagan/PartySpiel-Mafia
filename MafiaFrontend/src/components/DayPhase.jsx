@@ -90,19 +90,12 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
                     </div>
 
                     {/* --- Stimmen gegen MICH --- */}
-                    <div style={{
-                        marginTop: '10px',
-                        padding: '10px',
-                        backgroundColor: '#ffebee75',
-                        border: '1px solid #ef9a9a',
-                        borderRadius: '8px',
-                        color: '#ae4951'
-                    }}>
-                        <p style={{ margin: 0, fontWeight: 'bold', color: '#161B1F' }}>Gegen DICH haben gestimmt:</p>
-                        <div style={{ marginTop: '5px', fontSize: '1.1rem' }}>
+                    <div className="votes-against-me-box">
+                        <p className="votes-against-me-title">Gegen DICH haben gestimmt:</p>
+                        <div className="votes-against-me-list">
                             {votesAgainstMe.length > 0
                                 ? `😒 ${votesAgainstMe.join(', ')}`
-                                : <span style={{ color: '#161B1F', fontStyle: 'italic' }}>😎 Noch niemand...</span>
+                                : <span style={{ color: '#161B1F', fontStyle: 'italic', fontWeight: 'normal' }}>😎 Noch niemand...</span>
                             }
                         </div>
                     </div>
