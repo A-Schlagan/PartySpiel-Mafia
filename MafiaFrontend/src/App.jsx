@@ -27,7 +27,7 @@ function App() {
   const [currentVotes, setCurrentVotes] = useState({});
   const [roleConfirmed, setRoleConfirmed] = useState(false);
   const [gameLog, setGameLog] = useState([]);
-  const [hostNightData, setHostNightData] = useState({ mafiaVotes: {}, docTarget: null, detTarget: null });
+  const [hostNightData, setHostNightData] = useState({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
   const [nightReady, setNightReady] = useState(false);
   const [phaseDuration, setPhaseDuration] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -171,8 +171,14 @@ function App() {
     if (socket) {
 
       socket.on('connect', () => {
+        console.log("Verbunden mit Server. ID:", socket.id);
+        
         const name = localStorage.getItem("mafia_name");
         if (name) socket.emit('joinGame', { playerId: playerId.current, name });
+        if (isHostConsole) {
+            console.log("Re-Registering as Host...");
+            socket.emit('registerHost');
+        }
       });
 
       socket.on('recoverState', (data) => {
@@ -398,7 +404,9 @@ function App() {
 
   // HOST CONSOLE VIEW 
   if (isHostConsole) {
-    const getName = (id) => players.find(p => p.playerId === id)?.name || "Unbekannt";
+    const getName = (id) => {
+      if(!id) return "Unbekannt";
+      return players.find(p => p.playerId === id)?.name || "Unbekannt";}
     const progressPercent = totalTime > 0 ? (timeLeft / totalTime) * 100 : 0;
 
     return (

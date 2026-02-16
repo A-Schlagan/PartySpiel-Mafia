@@ -80,8 +80,8 @@ io.on('connection', (socket) => {
             gamePhase,
             settings,
             tieCandidates,
-            phaseEndTime: phaseEndTime, 
-            myActionTarget: myActionTarget 
+            phaseEndTime: phaseEndTime,
+            myActionTarget: myActionTarget
         });
 
         io.emit('updatePlayerList', Object.values(players));
@@ -89,15 +89,15 @@ io.on('connection', (socket) => {
 
     socket.on('registerHost', () => {
         hostSocketId = socket.id;
-        console.log("Host registriert mit ID:", hostSocketId);
-        
+        console.log("✅ HOST registriert mit neuer ID:", hostSocketId);
+
         socket.emit('recoverState', {
             me: { role: 'Spectator', name: 'Spielleiter', playerId: 'host', isAlive: true },
             allPlayers: Object.values(players),
             gamePhase,
             settings,
             tieCandidates,
-            hostNightData: nightActions 
+            hostNightData: nightActions
         });
     });
 
@@ -110,7 +110,7 @@ io.on('connection', (socket) => {
         if (settings.hasDetective) roles.push("Detektiv");
         if (settings.hasLady) roles.push("Lady");
         while (roles.length < pIds.length) roles.push("Bürger");
-        
+
         // Fisher-Yates Shuffle
         for (let i = roles.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -131,7 +131,7 @@ io.on('connection', (socket) => {
     socket.on('playerReady', (pid) => {
         if (!readyPlayers.includes(pid)) readyPlayers.push(pid);
         const livingPlayers = Object.values(players).filter(p => p.isAlive && p.playerId !== 'host').length;
-        
+
         // Alle bereit?
         if (readyPlayers.length >= livingPlayers && livingPlayers > 0) {
             startNight();
@@ -152,6 +152,8 @@ io.on('connection', (socket) => {
                 type: 'MAFIA_VOTE',
                 data: nightActions.mafiaVotes
             });
+        } else {
+            console.log("⚠️ Mafia hat gewählt, aber KEIN HOST gefunden!");
         }
 
         const votes = Object.values(nightActions.mafiaVotes);
@@ -321,7 +323,7 @@ function startNight() {
 
 function nextNightPhase() {
     if (gameTimer) clearTimeout(gameTimer);
-    
+
     // State Machine für die Nachtphasen
     if (gamePhase === "NIGHT_MAFIA") {
         if (settings.hasDoctor) {
@@ -357,11 +359,11 @@ function nextNightPhase() {
 
 function processPhaseStart(phase) {
     phaseEndTime = Date.now() + NIGHT_PHASE_TIME_MS;
-    
-    io.emit('gameStateUpdate', { 
-        gamePhase: phase, 
-        duration: NIGHT_PHASE_TIME_MS, 
-        phaseEndTime: phaseEndTime 
+
+    io.emit('gameStateUpdate', {
+        gamePhase: phase,
+        duration: NIGHT_PHASE_TIME_MS,
+        phaseEndTime: phaseEndTime
     });
 
     let wakeUpMsg = null;
@@ -493,7 +495,7 @@ function startDay() {
         title: "🔆 Neuer Tag",
         text: message
     });
-    
+
     if (gameTimer) clearTimeout(gameTimer);
     gameTimer = setTimeout(() => {
         checkWinCondition();
@@ -511,14 +513,14 @@ function startDay() {
         gamePhase = "DAY_DISCUSS";
         // Timer für Diskussion setzen????????????????????????????????????????????????????????
         phaseEndTime = Date.now() + DISCUSSION_TIME_MS;
-        
-        io.emit('gameStateUpdate', { 
-            gamePhase, 
+
+        io.emit('gameStateUpdate', {
+            gamePhase,
             discussionOpener: openerName,
             duration: DISCUSSION_TIME_MS,
-            phaseEndTime: phaseEndTime 
+            phaseEndTime: phaseEndTime
         });
-        
+
         io.emit('announcement', `Diskussion startet! ${openerName} beginnt!`);
 
         if (gameTimer) clearTimeout(gameTimer);
@@ -532,8 +534,8 @@ function startVotingPhase() {
     gamePhase = "DAY_VOTE";
     dayVotes = {};
     tieCandidates = [];
-    phaseEndTime = 0; 
-    
+    phaseEndTime = 0;
+
     io.emit('gameStateUpdate', { gamePhase, tieCandidates, phaseEndTime: 0 });
     io.emit('voteUpdate', {});
     io.emit('announcement', "Stimmt ab, wen ihr hängen wollt.");
