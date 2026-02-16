@@ -54,8 +54,8 @@ export default function Lobby({ socket, players, isHost }) {
             <p className="player-count">{players.length} Spieler verbunden</p>
             <ul style={{ listStyle: 'none', padding: 0 }}>
                 {players.map(p => (
-                    <li key={p.playerId} className="player-list-item" style={{borderBottom: '1px solid #333', padding: '10px 0', display: 'flex', justifyContent: 'space-between'}}>
-                        <span className="p-name" style={{fontWeight: 'bold', fontSize: '1.1rem'}}>{p.name}</span>
+                    <li key={p.playerId} className="player-list-item">
+                        <span className="p-name">{p.name}</span>
                         {p.role !== 'Spectator' && p.role !== 'Noch nicht verteilt' && <span className="p-ready">✅</span>}
                     </li>
                 ))}

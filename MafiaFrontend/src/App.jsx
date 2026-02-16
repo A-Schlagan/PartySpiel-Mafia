@@ -442,14 +442,6 @@ function App() {
               <button
                 onClick={() => socket.emit('forcePhaseNext')}
                 className="btn-emergency"
-                style={{
-                  background: '#ff5722',
-                  border: '1px solid #ffccbc',
-                  padding: '10px 15px',
-                  display: 'flex', alignItems: 'center', gap: '5px',
-                  fontSize: '1rem',
-                  cursor: 'pointer'
-                }}
                 title="Aktuelle Phase sofort beenden"
               >
                 ⏩ SKIP

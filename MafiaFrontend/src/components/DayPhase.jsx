@@ -44,22 +44,9 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
             {phase === 'DAY_ANNOUNCE' && <p>Bereitet euch für die Abstimmung...</p>}
 
             {phase === 'DAY_DISCUSS' && opener && (
-                <div style={{
-                    margin: '20px auto',
-                    padding: '15px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    color: '#333',
-                    borderRadius: '12px',
-                    border: '3px solid #AE4951',
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-                    maxWidth: '90%'
-                }}>
-                    <span style={{ fontSize: '1rem', textTransform: 'uppercase', color: '#555', display: 'block', marginBottom: '5px' }}>
-                        Das erste Wort geht heute an:
-                    </span>
-                    <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#AE4951', display: 'block', animation: 'pulse 2s infinite' }}>
-                        🎤 {opener}
-                    </span>
+                <div className="opener-box">
+                    <span className="opener-label">Das erste Wort geht heute an:</span>
+                    <span className="opener-name">🎤 {opener}</span>
                 </div>
             )}
 
@@ -106,7 +93,7 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
                     <div style={{
                         marginTop: '10px',
                         padding: '10px',
-                        backgroundColor: '#ffebee',
+                        backgroundColor: '#ffebee75',
                         border: '1px solid #ef9a9a',
                         borderRadius: '8px',
                         color: '#ae4951'
