@@ -701,7 +701,7 @@ function App() {
             setIsHostConsole(true);
           }}
         >
-          🖥️ Laptop Host (Nur Anzeige)
+          🖥️ Host-Anzeige für Notebook
         </button>
         </div>
     </div>
@@ -717,6 +717,12 @@ function App() {
         <div style={{ marginBottom: 30 }}>
           <p className="pulse-text">Warte auf Spielstart...</p>
           <Lobby socket={socket} players={players} isHost={isAdmin} />
+
+          {isAdmin && (
+          <div className="qr-card" style={{ marginTop: '20px', padding: '15px', maxWidth: '300px', margin: '20px auto' }}>
+                  <QRCode value={CLIENT_URL} size={150} style={{ maxWidth: '100%', height: 'auto' }}/>
+                </div>
+          )}
         </div>
       )}
 
