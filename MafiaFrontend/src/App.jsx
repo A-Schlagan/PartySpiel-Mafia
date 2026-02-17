@@ -9,6 +9,7 @@ import Lobby from './components/Lobby';
 import RoleCard from './components/RoleCard';
 import NightPhase from './components/NightPhase';
 import DayPhase from './components/DayPhase';
+import AdminMenu from './components/AdminMenu';
 
 const SERVER_URL = "https://partyspiel-mafia.onrender.com";
 const CLIENT_URL = "https://party-spiel-mafia.vercel.app";
@@ -34,6 +35,8 @@ function App() {
   const [totalTime, setTotalTime] = useState(0);
   const [winner, setWinner] = useState(null);
   const [showGameOverOverlay, setShowGameOverOverlay] = useState(false);
+  const [wantsAdmin, setWantsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const playerId = useRef(localStorage.getItem("mafia_pid") || uuidv4());
   const wasAlive = useRef(true);
@@ -113,6 +116,18 @@ function App() {
         actionCallback();
       }
     });
+  };
+
+  const handleLogin = () => {
+    const n = document.getElementById("nameInput").value;
+    if (!n) return;
+
+    setIsAdmin(wantsAdmin);
+
+    enterFullScreen();
+    requestWakeLock();
+    localStorage.setItem("mafia_name", n);
+    socket.emit('joinGame', { playerId: playerId.current, name: n });
   };
 
   useEffect(() => {
@@ -394,7 +409,7 @@ function App() {
   }, [socket, isHostConsole, me]);
 
 
-  // HOST CONSOLE VIEW 
+  // --- HOST CONSOLE VIEW (Laptop Only) ---
   if (isHostConsole) {
     const getName = (id) => {
       if (!id) return "Unbekannt";
@@ -643,31 +658,36 @@ function App() {
     );
   }
 
-
+  // --- LOGIN SCREEN (MOBILE + ADMIN TOGGLE) ---
   if (!me) return (
     <div className="login-container">
       <h1 className="mafia-title">MAFIA</h1>
-
       <div className="input-group">
         <input
           id="nameInput"
           placeholder="Dein Name"
           className="login-input"
         />
+
+        {/* === ADMIN TOGGLE SWITCH === */}
+        <label className="admin-toggle-container">
+          <span>Als Spielleiter starten? 👑</span>
+          <div className="toggle-switch">
+            <input
+              type="checkbox"
+              checked={wantsAdmin}
+              onChange={(e) => setWantsAdmin(e.target.checked)}
+            />
+            <span className="slider round"></span>
+          </div>
+        </label>
+
         <button
           className="btn-login"
-          onClick={() => {
-            const n = document.getElementById("nameInput").value;
-            if (!n) return;
-
-            enterFullScreen();
-            requestWakeLock();
-
-            localStorage.setItem("mafia_name", n);
-            socket.emit('joinGame', { playerId: playerId.current, name: n });
-          }}
+          onClick={handleLogin}
+          style={wantsAdmin ? { background: '#ffd700', color: 'black', boxShadow: '0 0 20px #ffd700' } : {}}
         >
-          Beitreten
+          {wantsAdmin ? "Lobby öffnen" : "Beitreten"}
         </button>
       </div>
 
@@ -682,9 +702,9 @@ function App() {
             setIsHostConsole(true);
           }}
         >
-          🖥️ Lobby eröffnen
+          🖥️ Laptop Host (Nur Anzeige)
         </button>
-        <p className="host-warning">Nur für SPIELLEITER (NOTEBOOK)!!!</p>
+
       </div>
 
     </div>
@@ -693,12 +713,13 @@ function App() {
   const isNight = gamePhase.startsWith('NIGHT');
   return (
     <div className={`player-app-container ${isNight ? 'night-mode' : ''}`}>
-      <button onClick={logout} className="btn-logout">❌</button>
+
+      <AdminMenu socket={socket} isAdmin={isAdmin} onLogout={logout} />
 
       {gamePhase === 'LOBBY' && (
         <div style={{ marginBottom: 30 }}>
           <p className="pulse-text">Warte auf Spielstart...</p>
-          <Lobby socket={socket} players={players} isHost={false} />
+          <Lobby socket={socket} players={players} isHost={isAdmin} />
         </div>
       )}
 
