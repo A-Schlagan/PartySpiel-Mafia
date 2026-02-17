@@ -715,13 +715,19 @@ function App() {
 
       {gamePhase === 'LOBBY' && (
         <div style={{ marginBottom: 30 }}>
-          <p className="pulse-text">Warte auf Spielstart...</p>
+          <h1 className="mafia-title" style={{ fontSize: '3rem', marginBottom: '10px' }}>MAFIA</h1>
           <Lobby socket={socket} players={players} isHost={isAdmin} />
-
           {isAdmin && (
-          <div className="qr-card" style={{ marginTop: '20px', padding: '15px', maxWidth: '300px', margin: '20px auto' }}>
-                  <QRCode value={CLIENT_URL} size={150} style={{ maxWidth: '100%', height: 'auto' }}/>
-                </div>
+            <div className="qr-card">
+               <div style={{ background: 'white', padding: '10px', borderRadius: '10px' }}>
+                  <QRCode 
+                    value={CLIENT_URL} 
+                    size={150} 
+                    style={{ display: 'block' }}
+                    viewBox={`0 0 256 256`}
+                  />
+               </div>
+            </div>
           )}
         </div>
       )}

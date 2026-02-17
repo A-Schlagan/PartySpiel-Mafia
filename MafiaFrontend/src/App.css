@@ -79,7 +79,6 @@ button:active {
 
 /* Shared Glass Styles */
 .host-panel,
-.qr-card,
 .vote-section,
 .status-msg,
 .opener-box,
@@ -90,7 +89,6 @@ button:active {
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   border-radius: 12px;
-  /* Einheitlicher Radius */
 }
 
 /* Role Badges */
@@ -181,6 +179,7 @@ button:active {
   letter-spacing: 10px;
   margin-bottom: 40px;
   animation: flicker 4s infinite;
+  text-align: center;
 }
 
 .input-group {
@@ -394,25 +393,6 @@ button:active {
   background: #e64a19;
 }
 
-/* QR Code */
-.qr-card {
-  background: white;
-  padding: 15px;
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-  color: black;
-}
-
-.qr-link {
-  color: black;
-  margin-top: 5px;
-  font-size: 0.7rem;
-  font-family: monospace;
-}
-
 /* =========================================
    5. LOBBY & PLAYER LISTS
    ========================================= */
@@ -492,6 +472,7 @@ button:active {
   color: #aaaaaab4;
   margin-bottom: 15px;
   font-style: italic;
+  text-align: center;
 }
 
 .player-table {
@@ -1153,7 +1134,7 @@ button:active {
 }
 
 /* =========================================
-   12. ADMIN MENU & TOGGLE (NEU)
+   12. ADMIN MENU & TOGGLE
    ========================================= */
 
 /* --- Login Screen Toggle Switch --- */
@@ -1342,5 +1323,34 @@ input:checked + .slider:before {
   color: white;
 }
 
+.qr-card {
+  background: transparent; 
+  padding: 10px;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: none; 
+  border: none; 
+}
 
+.qr-link {
+  color: #888;
+  margin-top: 5px;
+  font-size: 0.7rem;
+  font-family: monospace;
+}
 
+.lobby-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.player-list-container {
+  background: rgba(255,255,255,0.03);
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #333;
+}
