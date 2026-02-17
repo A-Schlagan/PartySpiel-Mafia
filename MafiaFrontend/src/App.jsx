@@ -97,6 +97,10 @@ function App() {
   };
 
   const logout = () => {
+    if (socket) {
+        socket.emit('disconnectPlayer', playerId.current); 
+        socket.disconnect();
+    }
     localStorage.removeItem("mafia_name");
     window.location.reload();
   };

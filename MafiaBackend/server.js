@@ -283,6 +283,34 @@ io.on('connection', (socket) => {
             io.disconnectSockets();
         }, 500);
     });
+
+    socket.on('disconnectPlayer', (pid) => {
+        if (players[pid]) {
+            console.log(`👋 Spieler hat sich ausgeloggt: ${players[pid].name}`);
+            delete players[pid]; 
+            
+            if (pid === 'host') {
+                hostSocketId = null;
+            }
+
+            io.emit('updatePlayerList', Object.values(players));
+        }
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Verbindung getrennt:', socket.id);
+        
+        if (socket.id === hostSocketId) {
+            console.log("⚠️ HOST ist offline gegangen.");
+            if (players['host']) players['host'].isOnline = false;
+        }
+
+        const pid = Object.keys(players).find(id => players[id].socketId === socket.id);
+        if (pid) {
+            players[pid].isOnline = false; 
+            io.emit('updatePlayerList', Object.values(players));
+        }
+    });
 });
 
 function transitionToPhase(nextPhase, message, soundKey, delayMs) {
