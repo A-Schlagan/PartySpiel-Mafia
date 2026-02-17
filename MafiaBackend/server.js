@@ -40,15 +40,19 @@ function logToHost(message, type = 'info') {
 
 io.on('connection', (socket) => {
 
-    socket.on('joinGame', ({ playerId, name }) => {
+    socket.on('joinGame', ({ playerId, name, isAdmin }) => {
         // 1. Spieler Registrieren / Updaten
         if (players[playerId]) {
             players[playerId].socketId = socket.id;
             players[playerId].isOnline = true;
+            players[playerId].name = name;
+            if (isAdmin !== undefined) {
+            players[playerId].isHost = isAdmin;
+            }
         } else {
             players[playerId] = {
                 playerId, socketId: socket.id, name,
-                role: "Spectator", isAlive: true, isOnline: true
+                role: "Spectator", isAlive: true, isOnline: true, isHost: isAdmin || false
             };
         }
 
@@ -286,7 +290,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnectPlayer', (pid) => {
         if (players[pid]) {
-            console.log(`👋 Spieler hat sich ausgeloggt: ${players[pid].name}`);
+            console.log(`Spieler hat sich ausgeloggt: ${players[pid].name}`);
             delete players[pid]; 
             
             if (pid === 'host') {

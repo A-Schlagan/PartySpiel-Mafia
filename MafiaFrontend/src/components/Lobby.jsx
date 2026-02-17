@@ -60,7 +60,7 @@ export default function Lobby({ socket, players, isHost }) {
                         <li key={p.playerId} className="player-list-item">
                             <span className="p-name">{p.name}</span>
                             {p.role !== 'Spectator' && p.role !== 'Noch nicht verteilt' && <span className="p-ready">✅</span>}
-                            {p.playerId === 'host' && <span style={{fontSize: '1.2rem'}}>👑</span>}
+                            {p.isHost &&(<span style={{fontSize: '1.2rem', marginLeft: '6px'}} title="Spielleiter">👑</span>)}
                         </li>
                     ))}
                 </ul>

@@ -102,6 +102,7 @@ function App() {
         socket.disconnect();
     }
     localStorage.removeItem("mafia_name");
+    localStorage.removeItem("mafia_pid");
     window.location.reload();
   };
 
@@ -131,7 +132,7 @@ function App() {
     enterFullScreen();
     requestWakeLock();
     localStorage.setItem("mafia_name", n);
-    socket.emit('joinGame', { playerId: playerId.current, name: n });
+    socket.emit('joinGame', { playerId: playerId.current, name: n, isAdmin: wantsAdmin });
   };
 
   useEffect(() => {
