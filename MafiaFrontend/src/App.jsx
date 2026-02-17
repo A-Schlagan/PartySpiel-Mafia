@@ -658,7 +658,7 @@ function App() {
     );
   }
 
-  // --- LOGIN SCREEN (MOBILE + ADMIN TOGGLE) ---
+// --- LOGIN SCREEN (MOBILE + ADMIN TOGGLE) ---
   if (!me) return (
     <div className="login-container">
       <h1 className="mafia-title">MAFIA</h1>
@@ -669,19 +669,6 @@ function App() {
           className="login-input"
         />
 
-        {/* === ADMIN TOGGLE SWITCH === */}
-        <label className="admin-toggle-container">
-          <span>Als Spielleiter starten? 👑</span>
-          <div className="toggle-switch">
-            <input
-              type="checkbox"
-              checked={wantsAdmin}
-              onChange={(e) => setWantsAdmin(e.target.checked)}
-            />
-            <span className="slider round"></span>
-          </div>
-        </label>
-
         <button
           className="btn-login"
           onClick={handleLogin}
@@ -691,8 +678,20 @@ function App() {
         </button>
       </div>
 
-      {/* 3. Host Bereich  */}
-      <div className="host-footer">
+      <div className="host-footer" style={{ width: '100%', maxWidth: '350px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        
+        <label className="admin-toggle-container" style={{ margin: 0 }}>
+            <span>Als Spielleiter starten? 👑</span>
+            <div className="toggle-switch">
+                <input 
+                    type="checkbox" 
+                    checked={wantsAdmin} 
+                    onChange={(e) => setWantsAdmin(e.target.checked)} 
+                />
+                <span className="slider round"></span>
+            </div>
+        </label>
+
         <button
           className="btn-host-login"
           onClick={() => {
@@ -704,9 +703,7 @@ function App() {
         >
           🖥️ Laptop Host (Nur Anzeige)
         </button>
-
-      </div>
-
+        </div>
     </div>
   );
 
