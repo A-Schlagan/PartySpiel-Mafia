@@ -47,7 +47,7 @@ io.on('connection', (socket) => {
             players[playerId].isOnline = true;
             players[playerId].name = name;
             if (isAdmin !== undefined) {
-            players[playerId].isHost = isAdmin;
+                players[playerId].isHost = isAdmin;
             }
         } else {
             players[playerId] = {
@@ -291,8 +291,8 @@ io.on('connection', (socket) => {
     socket.on('disconnectPlayer', (pid) => {
         if (players[pid]) {
             console.log(`Spieler hat sich ausgeloggt: ${players[pid].name}`);
-            delete players[pid]; 
-            
+            delete players[pid];
+
             if (pid === 'host') {
                 hostSocketId = null;
             }
@@ -303,7 +303,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('Verbindung getrennt:', socket.id);
-        
+
         if (socket.id === hostSocketId) {
             console.log("⚠️ HOST ist offline gegangen.");
             if (players['host']) players['host'].isOnline = false;
@@ -311,7 +311,7 @@ io.on('connection', (socket) => {
 
         const pid = Object.keys(players).find(id => players[id].socketId === socket.id);
         if (pid) {
-            players[pid].isOnline = false; 
+            players[pid].isOnline = false;
             io.emit('updatePlayerList', Object.values(players));
         }
     });
@@ -350,7 +350,7 @@ function startNight() {
     transitionToPhase(
         "NIGHT_MAFIA",
         "",
-        "night_start_sound",
+        "",
         15000
     );
 }
@@ -519,49 +519,72 @@ function startDay() {
     }
     logToHost(nightReport, 'phase');
 
+    console.log("--------------------------------");
+    console.log("📊 Mafia Votes:", nightActions.mafiaVotes);
+    console.log("🎯 Mafia Ziel:", mafiaTargetId);
+    console.log("💀 Tote Spieler Liste:", deadPlayers);
+    console.log("--------------------------------");
+
     deadPlayers.forEach(pid => {
         if (players[pid]) players[pid].isAlive = false;
     });
 
     io.emit('gameStateUpdate', { gamePhase, players: Object.values(players) });
-    io.emit('playSound', 'morning');
-    io.emit('dayAnnouncement', {
-        title: "🔆 Neuer Tag",
-        text: message
+    if (deadPlayers.length > 0) {
+        console.log("📢 SENDE BEFEHL: 'gunshoot' an alle!");
+        io.emit('playSound', 'gunshoot');
+        setTimeout(() => {
+            io.emit('playSound', 'morning');
+            io.emit('dayAnnouncement', {
+                title: "🔆 Neuer Tag",
+                text: message
+            });
+            startDiscussionTimer();
+        }, 3000);
+    } else {
+        console.log("🌞 Niemand gestorben -> Sende 'morning'");
+        io.emit('playSound', 'morning');
+        io.emit('dayAnnouncement', {
+            title: "🔆 Ein friedlicher Morgen",
+            text: message
+        });
+        startDiscussionTimer();
+    }
+}
+
+function startDiscussionTimer() {
+
+if (gameTimer) clearTimeout(gameTimer);
+gameTimer = setTimeout(() => {
+    checkWinCondition();
+
+    if (gamePhase === "GAME_OVER") {
+        return;
+    }
+    const living = Object.values(players).filter(p => p.isAlive && p.playerId !== 'host' && p.role !== 'Spectator');
+    let openerName = "Niemand";
+    if (living.length > 0) {
+        const randomIndex = Math.floor(Math.random() * living.length);
+        openerName = living[randomIndex].name;
+    }
+
+    gamePhase = "DAY_DISCUSS";
+    phaseEndTime = Date.now() + DISCUSSION_TIME_MS;
+
+    io.emit('gameStateUpdate', {
+        gamePhase,
+        discussionOpener: openerName,
+        duration: DISCUSSION_TIME_MS,
+        phaseEndTime: phaseEndTime
     });
+
+    io.emit('announcement', `Diskussion startet! ${openerName} beginnt!`);
 
     if (gameTimer) clearTimeout(gameTimer);
     gameTimer = setTimeout(() => {
-        checkWinCondition();
-
-        if (gamePhase === "GAME_OVER") {
-            return;
-        }
-        const living = Object.values(players).filter(p => p.isAlive && p.playerId !== 'host' && p.role !== 'Spectator');
-        let openerName = "Niemand";
-        if (living.length > 0) {
-            const randomIndex = Math.floor(Math.random() * living.length);
-            openerName = living[randomIndex].name;
-        }
-
-        gamePhase = "DAY_DISCUSS";
-        // Timer für Diskussion setzen????????????????????????????????????????????????????????
-        phaseEndTime = Date.now() + DISCUSSION_TIME_MS;
-
-        io.emit('gameStateUpdate', {
-            gamePhase,
-            discussionOpener: openerName,
-            duration: DISCUSSION_TIME_MS,
-            phaseEndTime: phaseEndTime
-        });
-
-        io.emit('announcement', `Diskussion startet! ${openerName} beginnt!`);
-
-        if (gameTimer) clearTimeout(gameTimer);
-        gameTimer = setTimeout(() => {
-            startVotingPhase();
-        }, DISCUSSION_TIME_MS);
-    }, 5000);
+        startVotingPhase();
+    }, DISCUSSION_TIME_MS);
+}, 5000);
 }
 
 function startVotingPhase() {
@@ -680,9 +703,9 @@ function checkWinCondition() {
 process.on('uncaughtException', (err) => {
     console.error('💥 KRITISCHER FEHLER (Server läuft weiter):', err);
     if (hostSocketId) {
-        io.to(hostSocketId).emit('serverLog', { 
-            msg: `SERVER FEHLER: ${err.message}`, 
-            type: 'error' 
+        io.to(hostSocketId).emit('serverLog', {
+            msg: `SERVER FEHLER: ${err.message}`,
+            type: 'error'
         });
     }
 });

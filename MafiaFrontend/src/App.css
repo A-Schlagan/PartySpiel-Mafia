@@ -1354,3 +1354,29 @@ input:checked + .slider:before {
   border-radius: 12px;
   border: 1px solid #333;
 }
+
+.host-panel {
+    overflow-y: auto;     
+    max-height: 85vh;      
+    scrollbar-width: thin; 
+    padding-right: 5px; 
+}
+
+.host-panel::-webkit-scrollbar {
+    width: 6px;
+}
+.host-panel::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.2);
+}
+.host-panel::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 10px;
+}
+.host-panel::-webkit-scrollbar-thumb:hover {
+    background: var(--c-mafia);
+}
+
+.host-controls .player-list-container {
+    max-height: 400px; 
+    overflow-y: auto;
+}

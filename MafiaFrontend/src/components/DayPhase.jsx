@@ -37,11 +37,21 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
         return voters;
     };
 
+    const getPhaseTitle = () => {
+        if (phase === 'DAY_DISCUSS') return 'DISKUSSION 🗣️';
+        if (phase === 'DAY_VOTE' || phase === 'DAY_TIEBREAKER') return 'ABSTIMMUNG 🗳️';
+        return 'BERICHT 📢'; 
+    };
+
     return (
         <div className="day-phase-container">
-            <h1>{phase === 'DAY_DISCUSS' ? 'DISKUSSION 🗣️' : 'ABSTIMMUNG 🗳️'}</h1>
+            <h1>{getPhaseTitle()}</h1>
 
-            {phase === 'DAY_ANNOUNCE' && <p>Bereitet euch für die Abstimmung...</p>}
+            {phase === 'DAY_ANNOUNCE' && (
+                <p className="pulse-text" style={{fontSize: '1.2rem', color: '#aaa'}}>
+                    Es geht weiter...
+                </p>
+            )}
 
             {phase === 'DAY_DISCUSS' && opener && (
                 <div className="opener-box">
