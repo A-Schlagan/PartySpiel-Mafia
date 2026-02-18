@@ -351,7 +351,7 @@ function startNight() {
         "NIGHT_MAFIA",
         "",
         "night_start_sound",
-        15000
+            15000
     );
 }
 
