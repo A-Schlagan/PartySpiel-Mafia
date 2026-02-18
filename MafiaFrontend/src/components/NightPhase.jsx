@@ -96,21 +96,19 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
                     <p>Wählt ein Opfer:</p>
                     <div className="grid-container">
                         {players.filter(p => p.isAlive && p.role !== 'Mafia').map(p => {
-                            const voters = Object.keys(mafiaVotes).filter(vid => mafiaVotes[vid] === p.playerId);
+                            const voterIds = Object.keys(mafiaVotes).filter(vid => mafiaVotes[vid] === p.playerId);                            
                             const isMySelection = mafiaVotes[me.playerId] === p.playerId || localSelection === p.playerId;
-
                             const voterNames = voterIds.map(vid => {
                                 const voter = players.find(pl => pl.playerId === vid);
                                 return voter ? voter.name : 'Unbekannt';
                             });
-
+                            
                             return (
                                 <button key={p.playerId} onClick={() => handleActionClick(p.playerId)}
                                     className={`action-btn btn-mafia ${voterIds.length > 0 ? 'voted' : ''} ${isMySelection ? 'btn-selected-shine' : ''}`}
                                     style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }} 
                                 >
                                     <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>💀 {p.name}</span>
-                                    
                                     {voterNames.length > 0 && (
                                         <div style={{ fontSize: '0.8rem', color: '#ff8a80', marginTop: '2px' }}>
                                             {voterNames.join(', ')}
