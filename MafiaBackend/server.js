@@ -350,7 +350,7 @@ function startNight() {
     transitionToPhase(
         "NIGHT_MAFIA",
         "",
-        "",
+        "night_start_sound",
         15000
     );
 }
