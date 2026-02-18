@@ -12,6 +12,12 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
     const [localSelection, setLocalSelection] = useState(null); 
 
     useEffect(() => {
+        if (me.isAlive) {
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 150, 50, 200]);
+        }
+    }, []);
+
+    useEffect(() => {
         setMafiaVotes({});
         setLocalSelection(null); 
 
@@ -112,7 +118,8 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
                 <div>
                     <h2 style={{ color: 'green' }}>ARZT</h2>
                     <p>Wen möchtest du schützen?</p>
-                    {hasActed ? <div className="status-msg fade-in">✅ Entscheidung akzeptiert.</div> : (
+                    <p style={{ fontSize: '0.6rem', color: '#ccc' }}>(Du kannst eine Person retten!)</p>
+                    {hasActed ? <div className="status-msg fade-in">Gute Arbeit Doc!</div> : (
                         players.filter(p => p.isAlive).map(p => (
                             <button key={p.playerId} onClick={() => handleActionClick(p.playerId)} 
                                 className={`action-btn btn-doctor ${localSelection === p.playerId ? 'btn-selected-shine' : ''}`}>
@@ -129,8 +136,8 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
             return (
                 <div>
                     <h2 style={{ color: 'blue' }}>DETEKTIV</h2>
-                    <p>Wen untersuchen?</p>
-                    {hasActed ? <div className="status-msg fade-in">🕵️‍♂️ Untersuchung läuft...</div> : (
+                    <p>Eine Person darfst du prüfen!</p>
+                    {hasActed ? <div className="status-msg fade-in">🕵️‍♂️ Jetzt weißt du es... Und dieses Wissen könnte dein letztes sein.</div> : (
                         players.filter(p => p.isAlive && p.playerId !== me.playerId).map(p => (
                             <button key={p.playerId} onClick={() => handleActionClick(p.playerId)} 
                                 className={`action-btn btn-detective ${localSelection === p.playerId ? 'btn-selected-shine' : ''}`}>
@@ -148,8 +155,8 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
                 <div>
                     <h2 style={{ color: '#9c27b0' }}>💋 LADY</h2>
                     <p>Wen möchtest du besuchen?</p>
-                    <p style={{ fontSize: '0.8rem', color: '#ccc' }}>(Schutz oder gemeinsamer Tod)</p>
-                    {hasActed ? <div className="status-msg fade-in">💋 Du bist unterwegs...</div> : (
+                    <p style={{ fontSize: '0.6rem', color: '#ccc' }}>(Derjenige wird HEUTE NACHT geschützt. Wirst DU getötet, sterbt ihr BEIDE)</p>
+                    {hasActed ? <div className="status-msg fade-in">💋 Eine heiße Nacht...</div> : (
                         players.filter(p => p.isAlive && p.playerId !== me.playerId).map(p => (
                             <button key={p.playerId} onClick={() => handleActionClick(p.playerId)} 
                                 className={`action-btn btn-lady ${localSelection === p.playerId ? 'btn-selected-shine' : ''}`}>
@@ -166,7 +173,7 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
             <div className="eye-close-container">
                 <h2>NACHT</h2>
                 <div className="eye-icon" style={{ animation: 'none', fontSize: '60px' }}>🌙</div>
-                <p>Du schläfst...</p>
+                <p>🌙 Du schläfst...</p>
             </div>
         );
     };

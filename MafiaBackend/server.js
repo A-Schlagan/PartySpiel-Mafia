@@ -176,7 +176,7 @@ io.on('connection', (socket) => {
 
         if (hostSocketId) io.to(hostSocketId).emit('hostActionUpdate', { type: 'DOC_ACTION', target: targetId });
         if (gameTimer) clearTimeout(gameTimer);
-        nextNightPhase();
+        gameTimer = setTimeout(() => nextNightPhase(), 4000);        
     });
 
     socket.on('detectiveAction', (targetId) => {
@@ -199,7 +199,7 @@ io.on('connection', (socket) => {
         }
 
         if (gameTimer) clearTimeout(gameTimer);
-        gameTimer = setTimeout(() => nextNightPhase(), 8000);
+        gameTimer = setTimeout(() => nextNightPhase(), 6000);
     });
 
     socket.on('ladyAction', (targetId) => {
@@ -212,7 +212,7 @@ io.on('connection', (socket) => {
         if (hostSocketId) io.to(hostSocketId).emit('hostActionUpdate', { type: 'LADY_ACTION', target: targetId });
 
         if (gameTimer) clearTimeout(gameTimer);
-        nextNightPhase();
+        gameTimer = setTimeout(() => nextNightPhase(), 4000);
     });
 
     socket.on('voteDay', ({ voterId, targetId }) => {
@@ -519,11 +519,7 @@ function startDay() {
     }
     logToHost(nightReport, 'phase');
 
-    console.log("--------------------------------");
-    console.log("📊 Mafia Votes:", nightActions.mafiaVotes);
-    console.log("🎯 Mafia Ziel:", mafiaTargetId);
-    console.log("💀 Tote Spieler Liste:", deadPlayers);
-    console.log("--------------------------------");
+
 
     deadPlayers.forEach(pid => {
         if (players[pid]) players[pid].isAlive = false;
@@ -531,7 +527,6 @@ function startDay() {
 
     io.emit('gameStateUpdate', { gamePhase, players: Object.values(players) });
     if (deadPlayers.length > 0) {
-        console.log("📢 SENDE BEFEHL: 'gunshoot' an alle!");
         io.emit('playSound', 'gunshoot');
         setTimeout(() => {
             io.emit('playSound', 'morning');
