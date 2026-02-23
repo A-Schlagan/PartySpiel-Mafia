@@ -19,6 +19,7 @@ const DISCUSSION_TIME_MS = 20000;
 const NIGHT_PHASE_TIME_MS = 30000;
 
 app.use(cors());
+app.get('/ping', (req, res) => res.send('Game is alive!'));
 
 let players = {};
 let hostSocketId = null;
@@ -351,7 +352,7 @@ function startNight() {
         "NIGHT_MAFIA",
         "",
         "night_start_sound",
-            15000
+        15000
     );
 }
 
