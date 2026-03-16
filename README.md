@@ -8,7 +8,7 @@
 
 <p>
   <a href="https://party-spiel-mafia.vercel.app" target="_blank">
-    <img src="https://img.shields.io/badge/🔴_Live_Demo-Mitspielen-success?style=for-the-badge" alt="Live Demo" />
+    <img src="https://img.shields.io/badge/_Live_Demo-success?style=for-the-badge" alt="Live Demo" />
   </a>
 </p>
 
