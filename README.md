@@ -7,12 +7,13 @@
 </p>
 
 <p>
-<a href="<https://party-spiel-mafia.vercel.app>" target="_blank">
-<img src="[https://img.shields.io/badge/🔴_Live_Demo-Mitspielen-success?style=for-the-badge](https://img.shields.io/badge/%F0%9F%94%B4_Live_Demo-Mitspielen-success?style=for-the-badge)" alt="Live Demo" />
-
-
+  <a href="https://party-spiel-mafia.vercel.app" target="_blank">
+    <img src="https://img.shields.io/badge/🔴_Live_Demo-Mitspielen-success?style=for-the-badge" alt="Live Demo" />
+  </a>
 </p>
-<p><em>(Hinweis: Dies ist ein privates Spaß-Projekt für Spieleabende. Da das Backend auf einem kostenlosen Render-Tier läuft, dauert der erste Start wenige Sekunden.)</em></p>
+
+ 
+<p><em>(Hinweis: Da das Backend auf einem kostenlosen Render-Tier läuft, dauert der erste Start wenige Sekunden.)</em></p>
 </div>
 
 <br />
