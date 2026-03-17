@@ -1,12 +1,14 @@
-<div align="center"> <h1>Mafia - Real-Time Party Game</h1> 
+<div align="center"> <h1>Mafia - Real-Time Party Game</h1>
 
-<p><strong>Die interaktive, webbasierte Version des klassischen Social-Deduction-Partyspiels.</strong></p> 
+<p><strong>Die interaktive, webbasierte Version des klassischen Social-Deduction-Partyspiels.</strong></p>
 
+<p>
 
-<p><a href="<https://party-spiel-mafia.vercel.app>" target="_blank"><img src="[https://img.shields.io/badge/-Live_Demo-success?style=for-the-badge](https://img.shields.io/badge/%F0%9F%94%B4_Live_Demo-Mitspielen-success?style=for-the-badge)" alt="Live Demo" /></a></p> 
+[  ![](https://img.shields.io/badge/-Live_Demo-success?style=for-the-badge)](https://party-spiel-mafia.vercel.app)
 
+</p>
 
-<p><em>(Hinweis: Da das Backend auf einem kostenlosen Render-Tier läuft, dauert der erste Start wenige Sekunden.)</em></p> 
+<p><em>(Hinweis: Da das Backend auf einem kostenlosen Render-Tier läuft, dauert der erste Start wenige Sekunden.)</em></p>
 
 </div>
 
@@ -22,39 +24,39 @@
 
 <div align="center">
 
-<h3>Spieler-Ansicht (Mobile)</h3> 
+<h3>Spieler-Ansicht (Mobile)</h3>
 
-<table align="center"> 
+<table align="center">
 
-<tr> 
+<tr>
 
-<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/start_screen.gif" alt="Start Screen Animation" width="100%" /></td> 
+<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/start_screen.gif" alt="Start Screen Animation" width="100%" /></td>
 
-<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/spielleiter.jpg" alt="Spielleiter Ansicht" width="100%" /></td> 
+<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/spielleiter.jpg" alt="Spielleiter Ansicht" width="100%" /></td>
 
-<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/rules.jpg" alt="Spielregeln" width="100%" /></td> 
+<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/rules.jpg" alt="Spielregeln" width="100%" /></td>
 
-</tr> 
+</tr>
 
-<tr> 
+<tr>
 
-<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/rolle.jpg" alt="Rolle verdeckt" width="100%" /></td> 
+<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/rolle.jpg" alt="Rolle verdeckt" width="100%" /></td>
 
-<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/rolle_offen.jpg" alt="Rolle offen" width="100%" /></td> 
+<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/rolle_offen.jpg" alt="Rolle offen" width="100%" /></td>
 
-<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/night.jpg" alt="Nachtphase" width="100%" /></td> 
+<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/night.jpg" alt="Nachtphase" width="100%" /></td>
 
-</tr> 
+</tr>
 
-<tr> 
+<tr>
 
-<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/game_over.jpg" alt="Game Over Screen" width="100%" /></td> 
+<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/game_over.jpg" alt="Game Over Screen" width="100%" /></td>
 
-<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/setup.jpg" alt="Game Setup" width="100%" /></td> 
+<td valign="top" width="33%"><img src="./MafiaFrontend/src/assets/setup.jpg" alt="Game Setup" width="100%" /></td>
 
-<td valign="top" width="33%"></td> 
+<td valign="top" width="33%"></td>
 
-</tr> 
+</tr>
 
 </table>
 </div>
