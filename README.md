@@ -1,14 +1,10 @@
-<div align="center">
-<h1>Mafia - Real-Time Party Game</h1>
-<p>
-<strong>Die interaktive, webbasierte Version des klassischen Social-Deduction-Partyspiels.</strong>
-</p>
-<p>
-<a href="<https://party-spiel-mafia.vercel.app>" target="_blank"> 
+<div align="center"> <h1>Mafia - Real-Time Party Game</h1> 
 
-<img src="[https://img.shields.io/badge/Live_Demo-success?style=for-the-badge](https://img.shields.io/badge/%F0%9F%94%B4_Live_Demo-Mitspielen-success?style=for-the-badge)" alt="Live Demo" /> 
+<p><strong>Die interaktive, webbasierte Version des klassischen Social-Deduction-Partyspiels.</strong></p> 
 
-</a> </p> 
+
+<p><a href="<https://party-spiel-mafia.vercel.app>" target="_blank"><img src="[https://img.shields.io/badge/-Live_Demo-success?style=for-the-badge](https://img.shields.io/badge/%F0%9F%94%B4_Live_Demo-Mitspielen-success?style=for-the-badge)" alt="Live Demo" /></a></p> 
+
 
 <p><em>(Hinweis: Da das Backend auf einem kostenlosen Render-Tier läuft, dauert der erste Start wenige Sekunden.)</em></p> 
 
