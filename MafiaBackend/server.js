@@ -1,6 +1,6 @@
 // server.js
 const express = require('express');
-const http = require('http');
+const http = http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const app = express();
@@ -222,7 +222,7 @@ io.on('connection', (socket) => {
         const livingVoters = Object.values(players).filter(p => p.isAlive && p.playerId !== 'host').length;
         if (Object.keys(dayVotes).length >= livingVoters) {
             if (gameTimer) clearTimeout(gameTimer);
-            io.emit('announcement', "Alle haben gewählt! Ergebnis in 5 Sekunden...");
+            io.emit('announcement', "all_voted");
             gameTimer = setTimeout(() => {
                 evaluateVoting();
             }, 7000);
@@ -362,33 +362,33 @@ function nextNightPhase() {
     // State Machine für die Nachtphasen
     if (gamePhase === "NIGHT_MAFIA") {
         if (settings.hasDoctor) {
-            transitionToPhase("NIGHT_DOCTOR", "Die Mafia schläft ein...", "mafia_sleep_sound", 10000);
+            transitionToPhase("NIGHT_DOCTOR", "mafia_sleep", "mafia_sleep_sound", 10000);
         } else if (settings.hasDetective) {
-            transitionToPhase("NIGHT_DETECTIVE", "Die Mafia schläft ein...", "mafia_sleep_sound", 10000);
+            transitionToPhase("NIGHT_DETECTIVE", "mafia_sleep", "mafia_sleep_sound", 10000);
         } else if (settings.hasLady) {
-            transitionToPhase("NIGHT_LADY", "Die Mafia schläft ein...", "mafia_sleep_sound", 10000);
+            transitionToPhase("NIGHT_LADY", "mafia_sleep", "mafia_sleep_sound", 10000);
         } else {
-            transitionToPhase("DAY_ANNOUNCE", "Die Mafia schläft ein...", "mafia_sleep_sound", 10000);
+            transitionToPhase("DAY_ANNOUNCE", "mafia_sleep", "mafia_sleep_sound", 10000);
         }
     }
     else if (gamePhase === "NIGHT_DOCTOR") {
         if (settings.hasDetective) {
-            transitionToPhase("NIGHT_DETECTIVE", "Der Arzt schläft ein...", "doctor_sleep_sound", 10000);
+            transitionToPhase("NIGHT_DETECTIVE", "doctor_sleep", "doctor_sleep_sound", 10000);
         } else if (settings.hasLady) {
-            transitionToPhase("NIGHT_LADY", "Der Arzt schläft ein...", "doctor_sleep_sound", 10000);
+            transitionToPhase("NIGHT_LADY", "doctor_sleep", "doctor_sleep_sound", 10000);
         } else {
-            transitionToPhase("DAY_ANNOUNCE", "Der Arzt schläft ein...", "doctor_sleep_sound", 10000);
+            transitionToPhase("DAY_ANNOUNCE", "doctor_sleep", "doctor_sleep_sound", 10000);
         }
     }
     else if (gamePhase === "NIGHT_DETECTIVE") {
         if (settings.hasLady) {
-            transitionToPhase("NIGHT_LADY", "Der Detektiv schläft ein...", "detective_sleep_sound", 10000);
+            transitionToPhase("NIGHT_LADY", "detective_sleep", "detective_sleep_sound", 10000);
         } else {
-            transitionToPhase("DAY_ANNOUNCE", "Der Detektiv schläft ein...", "detective_sleep_sound", 10000);
+            transitionToPhase("DAY_ANNOUNCE", "detective_sleep", "detective_sleep_sound", 10000);
         }
     }
     else if (gamePhase === "NIGHT_LADY") {
-        transitionToPhase("DAY_ANNOUNCE", "Die Lady geht schlafen...", "lady_sleep_sound", 10000);
+        transitionToPhase("DAY_ANNOUNCE", "lady_sleep", "lady_sleep_sound", 10000);
     }
 }
 
@@ -404,10 +404,10 @@ function processPhaseStart(phase) {
     let wakeUpMsg = null;
     let wakeUpSound = "";
 
-    if (phase === 'NIGHT_MAFIA') { wakeUpMsg = "Mafia erwacht..."; wakeUpSound = "mafia_wake"; }
-    if (phase === 'NIGHT_DOCTOR') { wakeUpMsg = "Arzt erwacht..."; wakeUpSound = "doctor_wake"; }
-    if (phase === 'NIGHT_DETECTIVE') { wakeUpMsg = "Detektiv erwacht..."; wakeUpSound = "detective_wake"; }
-    if (phase === 'NIGHT_LADY') { wakeUpMsg = "Lady erwacht..."; wakeUpSound = "lady_wake"; }
+    if (phase === 'NIGHT_MAFIA') { wakeUpMsg = "mafia_wake"; wakeUpSound = "mafia_wake"; }
+    if (phase === 'NIGHT_DOCTOR') { wakeUpMsg = "doctor_wake"; wakeUpSound = "doctor_wake"; }
+    if (phase === 'NIGHT_DETECTIVE') { wakeUpMsg = "detective_wake"; wakeUpSound = "detective_wake"; }
+    if (phase === 'NIGHT_LADY') { wakeUpMsg = "lady_wake"; wakeUpSound = "lady_wake"; }
 
     io.emit('nightAnnouncement', { message: wakeUpMsg, sound: wakeUpSound });
 
@@ -427,7 +427,6 @@ function processPhaseStart(phase) {
             nextNightPhase();
         }, NIGHT_PHASE_TIME_MS);
     } else {
-        // Rolle tot: Zufällige Wartezeit simulieren
         const waitTime = Math.floor(Math.random() * 4000) + 7000;
         console.log(`${phase}: Alle ${activeRole} tot. Simuliere Denkzeit ${waitTime}ms.`);
 
@@ -456,20 +455,20 @@ function startDay() {
         mafiaTargetId = null;
     }
 
-    let nightReport = "🌙 Nacht-Bericht:\n";
+    let nightReport = "night_report_header\n";
     if (mafiaTargetId) {
-        nightReport += `- Mafia zielte auf: ${players[mafiaTargetId]?.name} (${players[mafiaTargetId]?.role})\n`;
+        nightReport += `- mafia_target: ${players[mafiaTargetId]?.name} (${players[mafiaTargetId]?.role})\n`;
     } else {
-        nightReport += `- Mafia: Kein Ziel\n`;
+        nightReport += `- mafia_no_target\n`;
     }
 
     if (settings.hasDoctor) {
         const docTarget = players[nightActions.doctorTarget];
-        nightReport += `- Arzt: ${docTarget ? `Schützte ${docTarget.name}` : 'Untätig'}\n`;
+        nightReport += `- doctor_action: ${docTarget ? docTarget.name : 'inactive'}\n`;
     }
 
     let deadPlayers = [];
-    let message = "Schüsse in der Nacht! Sind alle noch am Leben?";
+    let message = "shots_fired";
 
     if (mafiaTargetId) {
         const mafiaVictim = players[mafiaTargetId];
@@ -479,48 +478,45 @@ function startDay() {
 
         let targetSaved = false;
 
-        // Logik für Lady & Doctor Rettung
         if (ladyId && mafiaTargetId === ladyId) {
             if (nightActions.doctorTarget === ladyId) {
                 targetSaved = true;
-                message = "Schüsse in der Nacht! Ist jemand gestorben?";
-                nightReport += `🛡️ ERGEBNIS: Lady (${mafiaVictim.name}) wurde vom Arzt GEHEILT!\n`;
+                message = "shots_fired";
+                nightReport += `🛡️ RESULT: Lady (${mafiaVictim.name}) was healed by the doctor!\n`;
             } else {
                 deadPlayers.push(ladyId);
-                message = `Schüsse in der Nacht! Ist jemand gestorben?`;
-                nightReport += `💀 ERGEBNIS: Lady (${mafiaVictim.name}) wurde ERMORDET.\n`;
+                message = "shots_fired";
+                nightReport += `💀 RESULT: Lady (${mafiaVictim.name}) was murdered.\n`;
                 if (ladyVictimId && ladyVictimId !== ladyId && players[ladyVictimId] && players[ladyVictimId].isAlive) {
                     if (nightActions.doctorTarget === ladyVictimId) {
-                        message += `Schüsse in der Nacht! Ist jemand gestorben?`;
-                        nightReport += `🛡️ ERGEBNIS: Begleiter (${players[ladyVictimId].name}) wurde vom Arzt GEHEILT.\n`;
+                        message = "shots_fired";
+                        nightReport += `🛡️ RESULT: Companion (${players[ladyVictimId].name}) was healed by the doctor.\n`;
                     } else {
                         deadPlayers.push(ladyVictimId);
-                        message = `Schüsse in der Nacht! Ist jemand gestorben?`;
-                        nightReport += `💀💀 ERGEBNIS: Begleiter (${players[ladyVictimId].name}) starb auch (Rolle: ${players[ladyVictimId].role}).\n`;
+                        message = "shots_fired";
+                        nightReport += `💀💀 RESULT: Companion (${players[ladyVictimId].name}) also died (Role: ${players[ladyVictimId].role}).\n`;
                     }
                 }
             }
         } else {
             if (nightActions.doctorTarget === mafiaTargetId) {
                 targetSaved = true;
-                message = "Schüsse in der Nacht! Ist jemand gestorben?";
-                nightReport += `🛡️ ERGEBNIS: ${mafiaVictim.name} wurde vom Arzt GEHEILT.\n`;
+                message = "shots_fired";
+                nightReport += `🛡️ RESULT: ${mafiaVictim.name} was healed by the doctor.\n`;
             } else if (ladyVictimId === mafiaTargetId) {
                 targetSaved = true;
-                message = "Schüsse in der Nacht! Ist jemand gestorben?";
-                nightReport += `💋 ERGEBNIS: ${mafiaVictim.name} überlebte durch Lady-Besuch.\n`;
+                message = "shots_fired";
+                nightReport += `💋 RESULT: ${mafiaVictim.name} survived due to Lady visit.\n`;
             }
 
             if (!targetSaved) {
                 deadPlayers.push(mafiaTargetId);
-                message = `Schüsse in der Nacht! Ist jemand gestorben?`;
-                nightReport += `💀 ERGEBNIS: ${mafiaVictim.name} wurde ERMORDET. (Rolle: ${mafiaVictim.role})\n`;
+                message = "shots_fired";
+                nightReport += `💀 RESULT: ${mafiaVictim.name} was murdered. (Role: ${mafiaVictim.role})\n`;
             }
         }
     }
     logToHost(nightReport, 'phase');
-
-
 
     deadPlayers.forEach(pid => {
         if (players[pid]) players[pid].isAlive = false;
@@ -532,7 +528,7 @@ function startDay() {
         setTimeout(() => {
             io.emit('playSound', 'morning');
             io.emit('dayAnnouncement', {
-                title: "🔆 Neuer Tag",
+                title: "new_day",
                 text: message
             });
             startDiscussionTimer();
@@ -541,7 +537,7 @@ function startDay() {
         console.log("🌞 Niemand gestorben -> Sende 'morning'");
         io.emit('playSound', 'morning');
         io.emit('dayAnnouncement', {
-            title: "🔆 Ein friedlicher Morgen",
+            title: "peaceful_morning",
             text: message
         });
         startDiscussionTimer();
@@ -549,38 +545,37 @@ function startDay() {
 }
 
 function startDiscussionTimer() {
-
-if (gameTimer) clearTimeout(gameTimer);
-gameTimer = setTimeout(() => {
-    checkWinCondition();
-
-    if (gamePhase === "GAME_OVER") {
-        return;
-    }
-    const living = Object.values(players).filter(p => p.isAlive && p.playerId !== 'host' && p.role !== 'Spectator');
-    let openerName = "Niemand";
-    if (living.length > 0) {
-        const randomIndex = Math.floor(Math.random() * living.length);
-        openerName = living[randomIndex].name;
-    }
-
-    gamePhase = "DAY_DISCUSS";
-    phaseEndTime = Date.now() + DISCUSSION_TIME_MS;
-
-    io.emit('gameStateUpdate', {
-        gamePhase,
-        discussionOpener: openerName,
-        duration: DISCUSSION_TIME_MS,
-        phaseEndTime: phaseEndTime
-    });
-
-    io.emit('announcement', `Diskussion startet! ${openerName} beginnt!`);
-
     if (gameTimer) clearTimeout(gameTimer);
     gameTimer = setTimeout(() => {
-        startVotingPhase();
-    }, DISCUSSION_TIME_MS);
-}, 5000);
+        checkWinCondition();
+
+        if (gamePhase === "GAME_OVER") {
+            return;
+        }
+        const living = Object.values(players).filter(p => p.isAlive && p.playerId !== 'host' && p.role !== 'Spectator');
+        let openerName = "nobody";
+        if (living.length > 0) {
+            const randomIndex = Math.floor(Math.random() * living.length);
+            openerName = living[randomIndex].name;
+        }
+
+        gamePhase = "DAY_DISCUSS";
+        phaseEndTime = Date.now() + DISCUSSION_TIME_MS;
+
+        io.emit('gameStateUpdate', {
+            gamePhase,
+            discussionOpener: openerName,
+            duration: DISCUSSION_TIME_MS,
+            phaseEndTime: phaseEndTime
+        });
+
+        io.emit('announcement', `discussion_started:${openerName}`);
+
+        if (gameTimer) clearTimeout(gameTimer);
+        gameTimer = setTimeout(() => {
+            startVotingPhase();
+        }, DISCUSSION_TIME_MS);
+    }, 5000);
 }
 
 function startVotingPhase() {
@@ -591,7 +586,7 @@ function startVotingPhase() {
 
     io.emit('gameStateUpdate', { gamePhase, tieCandidates, phaseEndTime: 0 });
     io.emit('voteUpdate', {});
-    io.emit('announcement', "Stimmt ab, wen ihr hängen wollt.");
+    io.emit('announcement', "vote_prompt_announcement");
 }
 
 function evaluateVoting() {
@@ -613,9 +608,9 @@ function evaluateVoting() {
             logToHost(`⚖️ GLEICHSTAND: Stichwahl zwischen ${candidates.length} Spielern (${max} Stimmen).`, 'warning');
             io.emit('gameStateUpdate', { gamePhase, tieCandidates });
             io.emit('voteUpdate', {});
-            io.emit('announcement', `Gleichstand! Stichwahl zwischen ${candidates.length} Spielern.`);
+            io.emit('announcement', `tie_announcement:${candidates.length}`);
         } else {
-            handleNoDeath("Niemand hat gewählt. Niemand stirbt.");
+            handleNoDeath("no_votes_death");
             logToHost("⚖️ KEINE STIMMEN: Niemand stirbt.", 'info');
         }
     }
@@ -624,7 +619,7 @@ function evaluateVoting() {
             executeHanging(candidates[0], max);
         } else {
             logToHost(`⚖️ STICHWAHL PATT: Erneut Gleichstand (${max} Stimmen). Niemand stirbt.`, 'info');
-            handleNoDeath("Erneuter Gleichstand! Niemand stirbt heute.");
+            handleNoDeath("tie_again_death");
         }
     }
 }
@@ -636,7 +631,7 @@ function executeHanging(victimId, votesCount) {
     logToHost(`⚖️ TAGES-ERGEBNIS: ${victim.name} wurde gehängt. War: ${victim.role.toUpperCase()}!`, 'alert');
 
     players[victimId].isAlive = false;
-    io.emit('announcement', `${players[victimId].name} wurde mit ${votesCount} Stimmen gehängt!`);
+    io.emit('announcement', `hung_announcement:${players[victimId].name}:${votesCount}`);
     io.emit('gameStateUpdate', { gamePhase: "DAY_ANNOUNCE", players: Object.values(players) });
 
     if (gameTimer) clearTimeout(gameTimer);
@@ -649,10 +644,10 @@ function executeHanging(victimId, votesCount) {
     }, 5000);
 }
 
-function handleNoDeath(message) {
+function handleNoDeath(messageKey) {
     io.emit('dayAnnouncement', {
-        title: "Kein Ergebnis",
-        text: message
+        title: "no_result_title",
+        text: messageKey
     });
     if (gameTimer) clearTimeout(gameTimer);
     gameTimer = setTimeout(() => {
@@ -678,12 +673,12 @@ function checkWinCondition() {
         gamePhase = "GAME_OVER";
         winner = "VILLAGE";
         winMessage = "🏆 SPIEL BEENDET: Das DORF hat gewonnen!";
-        io.emit('announcement', "DORF GEWINNT!  🥳  Mafia ist tot.");
+        io.emit('announcement', "village_win_announcement");
     } else if (mafia >= citizens && alive.length > 0) {
         gamePhase = "GAME_OVER";
         winner = "MAFIA";
         winMessage = "🏆 SPIEL BEENDET: Die MAFIA hat gewonnen! 😈 (Überzahl erreicht)";
-        io.emit('announcement', "MAFIA GEWINNT!  😈  Überzahl erreicht.");
+        io.emit('announcement', "mafia_win_announcement");
     }
     if (gamePhase === "GAME_OVER") {
         if (gameTimer) clearTimeout(gameTimer);
@@ -695,7 +690,6 @@ function checkWinCondition() {
     }
 }
 
-// Fängt Fehler ab, damit der Server nicht abstürzt!
 process.on('uncaughtException', (err) => {
     console.error('💥 KRITISCHER FEHLER (Server läuft weiter):', err);
     if (hostSocketId) {

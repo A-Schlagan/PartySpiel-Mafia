@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function Lobby({ socket, players, isHost }) {
+    const { t } = useTranslation();
     const [mafiaCount, setMafiaCount] = useState(1);
     const [hasDoc, setHasDoc] = useState(true);
     const [hasDet, setHasDet] = useState(true);
@@ -15,7 +17,7 @@ export default function Lobby({ socket, players, isHost }) {
             {isHost && (
                 <div className="lobby-host-grid">
                     <div className="lobby-row">
-                        <label>Anzahl Mafia:</label>
+                        <label>{t('lobby.mafia_count')}:</label>
                         <input 
                             type="number" 
                             value={mafiaCount} 
@@ -28,22 +30,22 @@ export default function Lobby({ socket, players, isHost }) {
                     <div className="lobby-toggles">
                         <label className={`toggle-btn ${hasDoc ? 'active' : ''}`}>
                             <input type="checkbox" checked={hasDoc} onChange={e => setHasDoc(e.target.checked)} hidden />
-                            {hasDoc ? '🟢' : '?'} Arzt
+                            {hasDoc ? '🟢' : '?'} {t('lobby.doctor')}
                         </label>
                         
                         <label className={`toggle-btn ${hasDet ? 'active' : ''}`}>
                             <input type="checkbox" checked={hasDet} onChange={e => setHasDet(e.target.checked)} hidden />
-                            {hasDet ? '🟢' : '?'} Detektiv
+                            {hasDet ? '🟢' : '?'} {t('lobby.detective')}
                         </label>
 
                         <label className={`toggle-btn ${hasLady ? 'active' : ''}`}>
                             <input type="checkbox" checked={hasLady} onChange={e => setHasLady(e.target.checked)} hidden />
-                            {hasLady ? '🟢' : '?'} Lady
+                            {hasLady ? '🟢' : '?'} {t('lobby.lady')}
                         </label>
                     </div>
 
                     <button onClick={startGame} className="btn-start-game neon-pulse">
-                        ▶ SPIEL STARTEN
+                        {t('lobby.start_game')}
                     </button>
                     
                     <hr className="menu-divider" style={{margin: '25px 0', borderColor: '#333'}} />
@@ -52,9 +54,9 @@ export default function Lobby({ socket, players, isHost }) {
 
             <div className="player-list-container">
                 <h3 style={{marginTop: 0, textAlign: 'center', fontSize: '1rem', color: '#888'}}>
-                    WARTEZIMMER
+                    {t('lobby.waiting_room')}
                 </h3>
-                <p className="player-count">{players.length} Spieler bereit</p>
+                <p className="player-count">{t('lobby.players_ready', { count: players.length })}</p>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                     {players.map(p => (
                         <li key={p.playerId} className="player-list-item">

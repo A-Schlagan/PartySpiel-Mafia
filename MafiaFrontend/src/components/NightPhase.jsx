@@ -1,4 +1,5 @@
 import React, { useState, useEffect, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const TimerBar = memo(({ duration }) => (
     <div className="timer-container">
@@ -7,6 +8,7 @@ const TimerBar = memo(({ duration }) => (
 ));
 
 export default function NightPhase({ socket, phase, me, players, duration }) {
+    const { t } = useTranslation();
     const [mafiaVotes, setMafiaVotes] = useState({});
     const [hasActed, setHasActed] = useState(false);
     const [localSelection, setLocalSelection] = useState(null); 
@@ -63,9 +65,9 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
     if (phase === 'NIGHT_TRANSITION') {
         return (
             <div className="eye-close-container">
-                <div className="eye-text">Die Nacht bricht ein!</div>
+                <div className="eye-text">{t('night.transition_desc')}</div>
                 <div className="eye-icon">😴</div>
-                <div className="eye-text" style={{ fontSize: '3rem', color: '#ff0000' }}>AUGEN ZU!</div>
+                <div className="eye-text" style={{ fontSize: '3rem', color: '#ff0000' }}>{t('night.eyes_closed')}</div>
             </div>
         );
     }
@@ -77,12 +79,12 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
             const otherMafias = players.filter(p => p.role === 'Mafia' && p.playerId !== me.playerId);
             return (
                 <div>
-                    <h2 style={{ color: 'red', textShadow: '0 0 10px black' }}>MAFIA TREFFEN</h2>
+                    <h2 style={{ color: 'red', textShadow: '0 0 10px black' }}>{t('night.mafia_title')}</h2>
 
                     {/* KOMPLIZEN */}
                     {otherMafias.length > 0 && (
                         <div className="teammate-box">
-                            <span className="teammate-label">Deine Komplizen:</span>
+                            <span className="teammate-label">{t('night.mafia_partners')}:</span>
                             <div>
                                 {otherMafias.map(p => (
                                     <span key={p.playerId} className="teammate-badge">
@@ -93,14 +95,14 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
                         </div>
                     )}
 
-                    <p>Wählt ein Opfer:</p>
+                    <p>{t('night.mafia_choose')}:</p>
                     <div className="grid-container">
                         {players.filter(p => p.isAlive && p.role !== 'Mafia').map(p => {
-                            const voterIds = Object.keys(mafiaVotes).filter(vid => mafiaVotes[vid] === p.playerId);                            
+                            const voterIds = Object.keys(mafiaVotes).filter(vid => mafiaVotes[vid] === p.playerId);                    
                             const isMySelection = mafiaVotes[me.playerId] === p.playerId || localSelection === p.playerId;
                             const voterNames = voterIds.map(vid => {
                                 const voter = players.find(pl => pl.playerId === vid);
-                                return voter ? voter.name : 'Unbekannt';
+                                return voter ? voter.name : t('night.unknown');
                             });
                             
                             return (
@@ -127,10 +129,10 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
         if (phase === 'NIGHT_DOCTOR' && me.role === 'Arzt' && me.isAlive) {
             return (
                 <div>
-                    <h2 style={{ color: 'green' }}>ARZT</h2>
-                    <p>Wen möchtest du schützen?</p>
-                    <p style={{ fontSize: '0.6rem', color: '#ccc' }}>(Du kannst eine Person retten!)</p>
-                    {hasActed ? <div className="status-msg fade-in">Gute Arbeit Doc!</div> : (
+                    <h2 style={{ color: 'green' }}>{t('night.doctor_title')}</h2>
+                    <p>{t('night.doctor_choose')}</p>
+                    <p style={{ fontSize: '0.6rem', color: '#ccc' }}>({t('night.doctor_desc')})</p>
+                    {hasActed ? <div className="status-msg fade-in">{t('night.doctor_done')}</div> : (
                         players.filter(p => p.isAlive).map(p => (
                             <button key={p.playerId} onClick={() => handleActionClick(p.playerId)} 
                                 className={`action-btn btn-doctor ${localSelection === p.playerId ? 'btn-selected-shine' : ''}`}>
@@ -146,9 +148,9 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
         if (phase === 'NIGHT_DETECTIVE' && me.role === 'Detektiv' && me.isAlive) {
             return (
                 <div>
-                    <h2 style={{ color: 'blue' }}>DETEKTIV</h2>
-                    <p>Eine Person darfst du prüfen!</p>
-                    {hasActed ? <div className="status-msg fade-in">🕵️‍♂️ Jetzt weißt du es... Und dieses Wissen könnte dein letztes sein.</div> : (
+                    <h2 style={{ color: 'blue' }}>{t('night.detective_title')}</h2>
+                    <p>{t('night.detective_choose')}</p>
+                    {hasActed ? <div className="status-msg fade-in">{t('night.detective_done')}</div> : (
                         players.filter(p => p.isAlive && p.playerId !== me.playerId).map(p => (
                             <button key={p.playerId} onClick={() => handleActionClick(p.playerId)} 
                                 className={`action-btn btn-detective ${localSelection === p.playerId ? 'btn-selected-shine' : ''}`}>
@@ -164,10 +166,10 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
         if (phase === 'NIGHT_LADY' && me.role === 'Lady' && me.isAlive) {
             return (
                 <div>
-                    <h2 style={{ color: '#9c27b0' }}>💋 LADY</h2>
-                    <p>Wen möchtest du besuchen?</p>
-                    <p style={{ fontSize: '0.6rem', color: '#ccc' }}>(Derjenige wird HEUTE NACHT geschützt. Wirst DU getötet, sterbt ihr BEIDE)</p>
-                    {hasActed ? <div className="status-msg fade-in">💋 Eine heiße Nacht...</div> : (
+                    <h2 style={{ color: '#9c27b0' }}>{t('night.lady_title')}</h2>
+                    <p>{t('night.lady_choose')}</p>
+                    <p style={{ fontSize: '0.6rem', color: '#ccc' }}>({t('night.lady_desc')})</p>
+                    {hasActed ? <div className="status-msg fade-in">{t('night.lady_done')}</div> : (
                         players.filter(p => p.isAlive && p.playerId !== me.playerId).map(p => (
                             <button key={p.playerId} onClick={() => handleActionClick(p.playerId)} 
                                 className={`action-btn btn-lady ${localSelection === p.playerId ? 'btn-selected-shine' : ''}`}>
@@ -182,9 +184,9 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
         // --- VIEW: SCHLAFENDE  ---
         return (
             <div className="eye-close-container">
-                <h2>NACHT</h2>
+                <h2>{t('night.sleep_title')}</h2>
                 <div className="eye-icon" style={{ animation: 'none', fontSize: '60px' }}>🌙</div>
-                <p>🌙 Du schläfst...</p>
+                <p>🌙 {t('night.sleeping')}</p>
             </div>
         );
     };

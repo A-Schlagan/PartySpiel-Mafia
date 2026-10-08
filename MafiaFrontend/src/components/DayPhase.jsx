@@ -1,7 +1,8 @@
-// components/DayPhase.jsx
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function DayPhase({ socket, phase, me, players, tieCandidates, currentVotes, opener }) {
+    const { t } = useTranslation();
     const [votedFor, setVotedFor] = useState(null);
 
     useEffect(() => {
@@ -23,7 +24,7 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
         .filter(([_, targetId]) => targetId === me.playerId)
         .map(([voterId]) => {
             const p = players.find(pl => pl.playerId === voterId);
-            return p ? p.name : 'Unbekannt';
+            return p ? p.name : t('day.unknown');
         });
 
     const getVotersForCandidate = (candidateId) => {
@@ -31,16 +32,16 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
             .filter(([voterId, targetId]) => targetId === candidateId)
             .map(([voterId]) => {
                 const p = players.find(pl => pl.playerId === voterId);
-                return p ? p.name : 'Unbekannt';
+                return p ? p.name : t('day.unknown');
             });
 
         return voters;
     };
 
     const getPhaseTitle = () => {
-        if (phase === 'DAY_DISCUSS') return 'DISKUSSION 🗣️';
-        if (phase === 'DAY_VOTE' || phase === 'DAY_TIEBREAKER') return 'ABSTIMMUNG 🗳️';
-        return 'BERICHT 📢'; 
+        if (phase === 'DAY_DISCUSS') return t('day.title_discuss');
+        if (phase === 'DAY_VOTE' || phase === 'DAY_TIEBREAKER') return t('day.title_vote');
+        return t('day.title_report'); 
     };
 
     return (
@@ -49,13 +50,13 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
 
             {phase === 'DAY_ANNOUNCE' && (
                 <p className="pulse-text" style={{fontSize: '1.2rem', color: '#aaa'}}>
-                    Es geht weiter...
+                    {t('day.announcement')}
                 </p>
             )}
 
             {phase === 'DAY_DISCUSS' && opener && (
                 <div className="opener-box">
-                    <span className="opener-label">Das erste Wort geht heute an:</span>
+                    <span className="opener-label">{t('day.opener_label')}</span>
                     <span className="opener-name">🎤 {opener}</span>
                 </div>
             )}
@@ -65,15 +66,15 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
 
                     {phase === 'DAY_TIEBREAKER' ? (
                         <div className="tiebreaker-info">
-                            <h3 className="tie-title">STICHWAHL!</h3>
+                            <h3 className="tie-title">{t('day.tie_title')}</h3>
                             <p>
-                                Gleichstand! Ihr müsst euch zwischen diesen Spielern entscheiden.
+                                {t('day.tie_desc')}
                                 <br />
-                                <small>Bei erneutem Gleichstand stirbt niemand!</small>
+                                <small>{t('day.tie_subdesc')}</small>
                             </p>
                         </div>
                     ) : (
-                        <p>Wähle jemanden zum Hängen:</p>
+                        <p>{t('day.vote_prompt')}</p>
                     )}
 
                     <div className="candidates-grid">
@@ -101,16 +102,16 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
 
                     {/* --- Stimmen gegen MICH --- */}
                     <div className="votes-against-me-box">
-                        <p className="votes-against-me-title">Gegen DICH haben gestimmt:</p>
+                        <p className="votes-against-me-title">{t('day.votes_against_me')}</p>
                         <div className="votes-against-me-list">
                             {votesAgainstMe.length > 0
                                 ? `😒 ${votesAgainstMe.join(', ')}`
-                                : <span style={{ color: '#161B1F', fontStyle: 'italic', fontWeight: 'normal' }}>😎 Noch niemand...</span>
+                                : <span style={{ color: '#161B1F', fontStyle: 'italic', fontWeight: 'normal' }}>{t('day.no_votes')}</span>
                             }
                         </div>
                     </div>
 
-                    {votedFor && <p className="vote-confirmed">Stimme abgegeben.</p>}
+                    {votedFor && <p className="vote-confirmed">{t('day.vote_confirmed')}</p>}
                 </div>
             )}
         </div>
