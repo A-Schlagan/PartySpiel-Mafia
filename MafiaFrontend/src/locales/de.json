@@ -70,7 +70,9 @@
     "kick_title": "ALLE RAUSWERFEN?",
     "kick_text": "ACHTUNG: Alle Spieler werden vom Server getrennt! Das kann nicht rückgängig gemacht werden.",
     "kick_confirm": "Ja, alle kicken!",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "kicked_title": "Gekickt!",
+    "kicked_text": "Der Spielleiter hat alle Spieler aus der Runde geworfen."
   },
   "app": {
     "sun_down": "Die Sonne geht runter...",

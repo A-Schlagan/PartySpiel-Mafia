@@ -100,7 +100,6 @@ export default function DayPhase({ socket, phase, me, players, tieCandidates, cu
                         })}
                     </div>
 
-                    {/* --- Stimmen gegen MICH --- */}
                     <div className="votes-against-me-box">
                         <p className="votes-against-me-title">{t('day.votes_against_me')}</p>
                         <div className="votes-against-me-list">

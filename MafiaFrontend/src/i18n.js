@@ -11,10 +11,10 @@ i18n
       de: { translation: translationDE },
       ru: { translation: translationRU }
     },
-    lng: localStorage.getItem('mafia_lang') || 'de', // Gespeicherte Sprache oder Standard
+    lng: localStorage.getItem('mafia_lang') || 'de',
     fallbackLng: 'de',
     interpolation: {
-      escapeValue: false // React schützt bereits vor XSS
+      escapeValue: false 
     }
   });
 

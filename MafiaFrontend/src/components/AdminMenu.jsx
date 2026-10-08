@@ -58,7 +58,6 @@ export default function AdminMenu({ socket, isAdmin, onLogout }) {
                 {isAdmin ? '⚙️' : '❌'}
             </button>
 
-            {/* ausklappbares Menü */}
             {isOpen && (
                 <>
                     <div className="menu-backdrop" onClick={() => setIsOpen(false)} />

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 export default function RoleCard({ role, name }) {
     const { t } = useTranslation();
     const [isRevealed, setIsRevealed] = useState(false);
+    
     const startReveal = () => setIsRevealed(true);
     const endReveal = () => setIsRevealed(false);
 

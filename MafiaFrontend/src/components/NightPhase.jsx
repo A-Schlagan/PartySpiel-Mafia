@@ -61,7 +61,6 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
         (phase === 'NIGHT_DETECTIVE' && me.role === 'Detektiv' && me.isAlive) ||
         (phase === 'NIGHT_LADY' && me.role === 'Lady' && me.isAlive);
 
-    // --- VIEW: SCHLAFEN / TRANSITION ---
     if (phase === 'NIGHT_TRANSITION') {
         return (
             <div className="eye-close-container">
@@ -74,14 +73,12 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
 
     const renderContent = () => {
         
-        // --- VIEW: MAFIA ---
         if (phase === 'NIGHT_MAFIA' && me.role === 'Mafia' && me.isAlive) {
             const otherMafias = players.filter(p => p.role === 'Mafia' && p.playerId !== me.playerId);
             return (
                 <div>
                     <h2 style={{ color: 'red', textShadow: '0 0 10px black' }}>{t('night.mafia_title')}</h2>
 
-                    {/* KOMPLIZEN */}
                     {otherMafias.length > 0 && (
                         <div className="teammate-box">
                             <span className="teammate-label">{t('night.mafia_partners')}:</span>
@@ -125,7 +122,6 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
             );
         }
 
-        // --- VIEW: ARZT ---
         if (phase === 'NIGHT_DOCTOR' && me.role === 'Arzt' && me.isAlive) {
             return (
                 <div>
@@ -144,7 +140,6 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
             )
         }
 
-        // --- VIEW: DETEKTIV ---
         if (phase === 'NIGHT_DETECTIVE' && me.role === 'Detektiv' && me.isAlive) {
             return (
                 <div>
@@ -162,7 +157,6 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
             )
         }
 
-        // --- VIEW: LADY ---
         if (phase === 'NIGHT_LADY' && me.role === 'Lady' && me.isAlive) {
             return (
                 <div>
@@ -181,7 +175,6 @@ export default function NightPhase({ socket, phase, me, players, duration }) {
             )
         }
 
-        // --- VIEW: SCHLAFENDE  ---
         return (
             <div className="eye-close-container">
                 <h2>{t('night.sleep_title')}</h2>
