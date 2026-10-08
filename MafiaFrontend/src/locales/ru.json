@@ -10,6 +10,7 @@
   },
   "lobby": {
     "waiting": "Ожидание начала игры...",
+    "host_area": "👑 ЗОНА ВЕДУЩЕГО",
     "mafia_count": "Количество мафии",
     "doctor": "Доктор",
     "detective": "Детектив",
@@ -19,12 +20,12 @@
     "players_ready": "Игроков готово: {{count}}"
   },
   "role_card": {
-    "title": "ТВОЯ РОЛЬ",
-    "hold_prompt": "нажми и удерживай здесь!"
+    "title": "ВАША РОЛЬ",
+    "hold_prompt": "удерживайте здесь!"
   },
   "night": {
     "transition_desc": "Наступает ночь!",
-    "eyes_closed": "ЗАКРОЙ ГЛАЗА!",
+    "eyes_closed": "ЗАКРОЙТЕ ГЛАЗА!",
     "mafia_title": "ВСТРЕЧА МАФИИ",
     "mafia_partners": "Твои сообщники",
     "mafia_choose": "Выберите жертву",
@@ -73,9 +74,9 @@
   },
   "app": {
     "sun_down": "Солнце садится...",
-    "ready_first_night": "ГОТОВ КО СНУ!",
+    "ready_first_night": "Готов к первой ночи!",
     "waiting_others": "ЖДЕМ ДРУГИХ...",
-    "ready_night": "ГОТОВ КО СНУ!",
+    "ready_night": "ГОТОВ К НОЧИ",
     "game_over": "ИГРА ОКОНЧЕНА",
     "mafia_wins": "МАФИЯ ПОБЕЖДАЕТ",
     "citizens_wins": "МИРНЫЕ ПОБЕЖДАЮТ",
