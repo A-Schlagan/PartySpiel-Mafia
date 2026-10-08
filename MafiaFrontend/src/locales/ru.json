@@ -135,5 +135,20 @@
     "log_doc_acted": "Доктор сделал свой выбор.",
     "log_det_acted": "Детектив проверяет кого-то.",
     "log_lady_acted": "Леди в пути."
+  },
+  "announcements": {
+    "peaceful_morning": "Мирное утро...",
+    "new_day": "Наступил новый день!",
+    "shots_fired": "Ночью звучали выстрелы!",
+    "no_result_title": "Нет результата",
+    "no_votes_death": "Никто не получил достаточно голосов. Все выжили.",
+    "tie_again_death": "Снова ничья! Никто не повешен.",
+    "village_win_announcement": "🏆 Мирные победили!",
+    "mafia_win_announcement": "😈 Мафия победила!",
+    "vote_prompt_announcement": "Голосование начинается!",
+    "all_voted": "Все проголосовали!",
+    "discussion_started": "🎤 {{val1}} начинает обсуждение!",
+    "hung_announcement": "⚖️ {{val1}} повешен(а) (Голосов: {{val2}})!",
+    "tie_announcement": "⚖️ Переголосование между {{val1}} игроками!"
   }
 }

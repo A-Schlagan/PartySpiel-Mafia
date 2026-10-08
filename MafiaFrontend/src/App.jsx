@@ -260,15 +260,26 @@ function App() {
       }
     });
 
-    socket.on('announcement', (msg) => setAnnouncement(msg));
+    socket.on('announcement', (msg) => {
+      if (msg.includes(':')) {
+        const [key, val1, val2] = msg.split(':');
+        setAnnouncement(t(`announcements.${key}`, { val1, val2 }));
+      } else {
+        setAnnouncement(t(`announcements.${msg}`));
+      }
+    });
+
     socket.on('nightAnnouncement', ({ sound }) => { if (sound) playSound(sound); });
 
     socket.on('dayAnnouncement', ({ title, text }) => {
       const iAmHost = playerId.current === 'host' || isHostConsole;
+      const tTitle = t(`announcements.${title}`);
+      const tText = t(`announcements.${text}`);
+      
       if (!iAmHost) {
-        Swal.fire({ title, text, timer: 5000, showConfirmButton: false });
+        Swal.fire({ title: tTitle, text: tText, timer: 5000, showConfirmButton: false });
       }
-      setAnnouncement(text);
+      setAnnouncement(tText);
     });
 
     socket.on('detectiveResult', (data) => {
@@ -339,14 +350,18 @@ function App() {
 
     // 🔴 WICHTIG: Hier fangen wir das "Alle kicken"-Signal ab und leeren den Speicher absolut zuverlässig
     socket.on('forceReload', () => {
+      // 1. Event-Listener sofort killen, damit das Swal-Popup von 'gameReset' nicht mehr getriggert wird
+      socket.off('gameReset');
+      
+      // 2. Verbindung kappen, um sauberen Cut zu machen
+      socket.disconnect();
+
+      // 3. Kompletten Speicher löschen (Name, ID, Sprache)
       localStorage.clear();
+
+      // 4. Seite neuladen - jetzt ohne Blockade
       window.location.reload();
     });
-
-    return () => {
-      socket.off();
-    };
-  }, [socket]); // Nur an den socket gebunden, läuft stabil!
 
   const getTranslatedRole = (role) => {
     switch (role?.toLowerCase()) {
@@ -539,7 +554,7 @@ function App() {
   // --- LOGIN SCREEN ---
   if (!me) return (
     <div className="login-container">
-      <LanguageSelector />
+      
       <h1 className="mafia-title">{t('login.title')}</h1>
 
       <div className="input-group">
@@ -548,6 +563,7 @@ function App() {
           placeholder={t('login.name_placeholder')}
           className="login-input"
         />
+        <LanguageSelector />
 
         <button
           className="btn-login"
