@@ -275,7 +275,7 @@ function App() {
       const iAmHost = playerId.current === 'host' || isHostConsole;
       const tTitle = t(`announcements.${title}`);
       const tText = t(`announcements.${text}`);
-      
+
       if (!iAmHost) {
         Swal.fire({ title: tTitle, text: tText, timer: 5000, showConfirmButton: false });
       }
@@ -352,7 +352,7 @@ function App() {
     socket.on('forceReload', () => {
       // 1. Event-Listener sofort killen, damit das Swal-Popup von 'gameReset' nicht mehr getriggert wird
       socket.off('gameReset');
-      
+
       // 2. Verbindung kappen, um sauberen Cut zu machen
       socket.disconnect();
 
@@ -362,6 +362,11 @@ function App() {
       // 4. Seite neuladen - jetzt ohne Blockade
       window.location.reload();
     });
+
+    return () => {
+      socket.off();
+    };
+  }, [socket]);
 
   const getTranslatedRole = (role) => {
     switch (role?.toLowerCase()) {
@@ -554,7 +559,7 @@ function App() {
   // --- LOGIN SCREEN ---
   if (!me) return (
     <div className="login-container">
-      
+
       <h1 className="mafia-title">{t('login.title')}</h1>
 
       <div className="input-group">
