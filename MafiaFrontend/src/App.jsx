@@ -146,10 +146,10 @@ function App() {
     if (me) {
       if (wasAlive.current === true && me.isAlive === false) {
         setTimeout(() => {
-            if (navigator.vibrate) {
-                navigator.vibrate([500, 200, 1000]); 
-            }
-        }, 500); 
+          if (navigator.vibrate) {
+            navigator.vibrate([500, 200, 1000]);
+          }
+        }, 500);
       }
       wasAlive.current = me.isAlive;
     }
@@ -190,163 +190,163 @@ function App() {
   }, [phaseDuration, gamePhase]);
 
   useEffect(() => {
-    if (socket) {
-      socket.on('connect', () => {
-        const name = localStorage.getItem("mafia_name");
-        if (name) socket.emit('joinGame', { playerId: playerId.current, name });
-        if (isHostConsole) {
-          socket.emit('registerHost');
-        }
-      });
+    if (!socket) return;
 
-      socket.on('recoverState', (data) => {
-        let recoveredMe = data.me;
-        if (data.myActionTarget) {
-          recoveredMe = { ...recoveredMe, lastAction: data.myActionTarget };
-        }
-        setMe(recoveredMe);
-        setPlayers(data.allPlayers);
-        setGamePhase(data.gamePhase);
-        setSettings(data.settings);
-        if (data.tieCandidates) setTieCandidates(data.tieCandidates);
-        if (data.dayVotes) setCurrentVotes(data.dayVotes);
-        if (data.hostNightData) {
-          setHostNightData(prev => ({
-            ...prev,
-            mafiaVotes: data.hostNightData.mafiaVotes || {},
-            docTarget: data.hostNightData.doctorTarget,
-            detTarget: data.hostNightData.detectiveTarget,
-            ladyTarget: data.hostNightData.ladyTarget
-          }));
-        }
-        if (data.phaseEndTime) {
-          const now = Date.now();
-          const remaining = data.phaseEndTime - now;
-          setPhaseDuration(remaining > 0 ? remaining : 0);
-        }
-      });
+    // Alle Event-Listener einmalig beim Verbindungsaufbau registrieren
+    socket.on('connect', () => {
+      const name = localStorage.getItem("mafia_name");
+      if (name) socket.emit('joinGame', { playerId: playerId.current, name });
+      if (isHostConsole) {
+        socket.emit('registerHost');
+      }
+    });
 
-      socket.on('voteUpdate', (votes) => setCurrentVotes(votes));
-      socket.on('updatePlayerList', (list) => setPlayers(list));
-      socket.on('receiveRole', (role) => setMe(prev => ({ ...prev, role, isAlive: true })));
+    socket.on('recoverState', (data) => {
+      let recoveredMe = data.me;
+      if (data.myActionTarget) {
+        recoveredMe = { ...recoveredMe, lastAction: data.myActionTarget };
+      }
+      setMe(recoveredMe);
+      setPlayers(data.allPlayers);
+      setGamePhase(data.gamePhase);
+      setSettings(data.settings);
+      if (data.tieCandidates) setTieCandidates(data.tieCandidates);
+      if (data.dayVotes) setCurrentVotes(data.dayVotes);
+      if (data.hostNightData) {
+        setHostNightData(prev => ({
+          ...prev,
+          mafiaVotes: data.hostNightData.mafiaVotes || {},
+          docTarget: data.hostNightData.doctorTarget,
+          detTarget: data.hostNightData.detectiveTarget,
+          ladyTarget: data.hostNightData.ladyTarget
+        }));
+      }
+      if (data.phaseEndTime) {
+        const now = Date.now();
+        const remaining = data.phaseEndTime - now;
+        setPhaseDuration(remaining > 0 ? remaining : 0);
+      }
+    });
 
-      socket.on('gameStateUpdate', (data) => {
-        if (data.gamePhase) setGamePhase(data.gamePhase);
-        if (data.gamePhase === 'NIGHT_MAFIA') {
-          setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
-        }
-        if (data.gamePhase === 'GAME_OVER' && data.winner) {
-          setWinner(data.winner);
-          setShowGameOverOverlay(true);
-          setTimeout(() => setShowGameOverOverlay(false), 10000);
-        }
-        if (data.discussionOpener) setDiscussionOpener(data.discussionOpener);
-        if (data.gamePhase === 'NIGHT_TRANSITION' || data.gamePhase === 'LOBBY') setDiscussionOpener(null);
-        if (data.players) {
-          setPlayers(data.players);
-          const myServerState = data.players.find(p => p.playerId === playerId.current);
-          if (myServerState) setMe(prev => ({ ...prev, ...myServerState }));
-        }
-        if (data.tieCandidates) setTieCandidates(data.tieCandidates);
+    socket.on('voteUpdate', (votes) => setCurrentVotes(votes));
+    socket.on('updatePlayerList', (list) => setPlayers(list));
+    socket.on('receiveRole', (role) => setMe(prev => ({ ...prev, role, isAlive: true })));
 
-        if (data.phaseEndTime) {
-          const now = Date.now();
-          const remaining = data.phaseEndTime - now;
-          setPhaseDuration(remaining > 0 ? remaining : 0);
-        } else if (data.duration) {
-          setPhaseDuration(data.duration);
-        } else {
-          setPhaseDuration(0);
-        }
-      });
-
-      socket.on('announcement', (msg) => setAnnouncement(msg));
-      socket.on('nightAnnouncement', ({ sound }) => { if (sound) playSound(sound); });
-
-      socket.on('dayAnnouncement', ({ title, text }) => {
-        const iAmHost = playerId.current === 'host' || isHostConsole;
-        if (!iAmHost) {
-          Swal.fire({ title, text, timer: 5000, showConfirmButton: false });
-        }
-        setAnnouncement(text);
-      });
-
-      socket.on('detectiveResult', (data) => {
-        if (!isHostConsole) {
-          const messageHtml = data.isEvil
-            ? '<div class="pulse-text">MAFIA! 😈</div>'
-            : '<div class="pulse-text" style="color: #28a745">Bürger. 😇</div>';
-          Swal.fire({
-            html: messageHtml,
-            timer: 5000,
-            background: '#121212',
-            color: '#ffffff',
-            confirmButtonText: t('host_console.understood'),
-            confirmButtonColor: '#3085d6'
-          });
-        }
-      });
-
-      socket.on('playSound', (type) => playSound(type));
-
-      socket.on('gameReset', (updatedPlayerList) => {
-        setGamePhase("LOBBY");
-        setPlayers(updatedPlayerList);
-        setTieCandidates([]);
-        setAnnouncement("");
-        setCurrentVotes({});
-        setRoleConfirmed(false);
-        setGameLog([]);
+    socket.on('gameStateUpdate', (data) => {
+      if (data.gamePhase) setGamePhase(data.gamePhase);
+      if (data.gamePhase === 'NIGHT_MAFIA') {
         setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
+      }
+      if (data.gamePhase === 'GAME_OVER' && data.winner) {
+        setWinner(data.winner);
+        setShowGameOverOverlay(true);
+        setTimeout(() => setShowGameOverOverlay(false), 10000);
+      }
+      if (data.discussionOpener) setDiscussionOpener(data.discussionOpener);
+      if (data.gamePhase === 'NIGHT_TRANSITION' || data.gamePhase === 'LOBBY') setDiscussionOpener(null);
+      if (data.players) {
+        setPlayers(data.players);
+      }
+      if (data.tieCandidates) setTieCandidates(data.tieCandidates);
 
-        if (me && me.playerId !== 'host') {
-          setMe(prev => ({ ...prev, role: t('roles.not_assigned'), isAlive: true, lastAction: null }));
-        }
+      if (data.phaseEndTime) {
+        const now = Date.now();
+        const remaining = data.phaseEndTime - now;
+        setPhaseDuration(remaining > 0 ? remaining : 0);
+      } else if (data.duration) {
+        setPhaseDuration(data.duration);
+      } else {
+        setPhaseDuration(0);
+      }
+    });
 
-        if (!isHostConsole) {
-          Swal.fire({ icon: 'info', title: t('admin.btn_reset'), text: t('host_console.game_restarted_msg'), timer: 5000, showConfirmButton: false });
-        }
-      });
+    socket.on('announcement', (msg) => setAnnouncement(msg));
+    socket.on('nightAnnouncement', ({ sound }) => { if (sound) playSound(sound); });
 
-      socket.on('serverLog', ({ msg, type }) => {
+    socket.on('dayAnnouncement', ({ title, text }) => {
+      const iAmHost = playerId.current === 'host' || isHostConsole;
+      if (!iAmHost) {
+        Swal.fire({ title, text, timer: 5000, showConfirmButton: false });
+      }
+      setAnnouncement(text);
+    });
+
+    socket.on('detectiveResult', (data) => {
+      if (!isHostConsole) {
+        const messageHtml = data.isEvil
+          ? '<div class="pulse-text">MAFIA! 😈</div>'
+          : '<div class="pulse-text" style="color: #28a745">Bürger. 😇</div>';
+        Swal.fire({
+          html: messageHtml,
+          timer: 5000,
+          background: '#121212',
+          color: '#ffffff',
+          confirmButtonText: t('host_console.understood'),
+          confirmButtonColor: '#3085d6'
+        });
+      }
+    });
+
+    socket.on('playSound', (type) => playSound(type));
+
+    socket.on('gameReset', (updatedPlayerList) => {
+      setGamePhase("LOBBY");
+      setPlayers(updatedPlayerList);
+      setTieCandidates([]);
+      setAnnouncement("");
+      setCurrentVotes({});
+      setRoleConfirmed(false);
+      setGameLog([]);
+      setHostNightData({ mafiaVotes: {}, docTarget: null, detTarget: null, ladyTarget: null });
+
+      if (playerId.current !== 'host') {
+        setMe(prev => prev ? ({ ...prev, role: t('roles.not_assigned'), isAlive: true, lastAction: null }) : null);
+      }
+
+      if (!isHostConsole) {
+        Swal.fire({ icon: 'info', title: t('admin.btn_reset'), text: t('host_console.game_restarted_msg'), timer: 5000, showConfirmButton: false });
+      }
+    });
+
+    socket.on('serverLog', ({ msg, type }) => {
+      const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setGameLog(prev => [{ time, msg, type }, ...prev]);
+    });
+
+    socket.on('hostActionUpdate', (update) => {
+      const addLog = (msg, type = 'info') => {
         const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         setGameLog(prev => [{ time, msg, type }, ...prev]);
-      });
+      };
 
-      socket.on('hostActionUpdate', (update) => {
-        const addLog = (msg, type = 'info') => {
-          const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-          setGameLog(prev => [{ time, msg, type }, ...prev]);
-        };
+      if (update.type === 'MAFIA_VOTE') {
+        setHostNightData(prev => ({ ...prev, mafiaVotes: update.data }));
+        addLog(t('host_console.log_mafia_voted'), 'action');
+      }
+      if (update.type === 'DOC_ACTION') {
+        setHostNightData(prev => ({ ...prev, docTarget: update.target }));
+        addLog(t('host_console.log_doc_acted'), 'success');
+      }
+      if (update.type === 'DET_ACTION') {
+        setHostNightData(prev => ({ ...prev, detTarget: update.target }));
+        addLog(t('host_console.log_det_acted'), 'info');
+      }
+      if (update.type === 'LADY_ACTION') {
+        setHostNightData(prev => ({ ...prev, ladyTarget: update.target }));
+        addLog(t('host_console.log_lady_acted'), 'warning');
+      }
+    });
 
-        if (update.type === 'MAFIA_VOTE') {
-          setHostNightData(prev => ({ ...prev, mafiaVotes: update.data }));
-          addLog(t('host_console.log_mafia_voted'), 'action');
-        }
-        if (update.type === 'DOC_ACTION') {
-          setHostNightData(prev => ({ ...prev, docTarget: update.target }));
-          addLog(t('host_console.log_doc_acted'), 'success');
-        }
-        if (update.type === 'DET_ACTION') {
-          setHostNightData(prev => ({ ...prev, detTarget: update.target }));
-          addLog(t('host_console.log_det_acted'), 'info');
-        }
-        if (update.type === 'LADY_ACTION') {
-          setHostNightData(prev => ({ ...prev, ladyTarget: update.target }));
-          addLog(t('host_console.log_lady_acted'), 'warning');
-        }
-      });
-
-      socket.on('forceReload', () => {
-        localStorage.clear();
-        window.location.reload();
-      });
-    }
+    // 🔴 WICHTIG: Hier fangen wir das "Alle kicken"-Signal ab und leeren den Speicher absolut zuverlässig
+    socket.on('forceReload', () => {
+      localStorage.clear();
+      window.location.reload();
+    });
 
     return () => {
-      if (socket) socket.disconnect();
+      socket.off();
     };
-  }, [socket, isHostConsole, me]);
+  }, [socket]); // Nur an den socket gebunden, läuft stabil!
 
   const getTranslatedRole = (role) => {
     switch (role?.toLowerCase()) {
@@ -541,7 +541,7 @@ function App() {
     <div className="login-container">
       <LanguageSelector />
       <h1 className="mafia-title">{t('login.title')}</h1>
-      
+
       <div className="input-group">
         <input
           id="nameInput"
@@ -560,15 +560,15 @@ function App() {
 
       <div className="host-footer" style={{ width: '100%', maxWidth: '350px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
         <label className="admin-toggle-container" style={{ margin: 0 }}>
-            <span>{t('login.as_host')}</span>
-            <div className="toggle-switch">
-                <input 
-                    type="checkbox" 
-                    checked={wantsAdmin} 
-                    onChange={(e) => setWantsAdmin(e.target.checked)} 
-                />
-                <span className="slider round"></span>
-            </div>
+          <span>{t('login.as_host')}</span>
+          <div className="toggle-switch">
+            <input
+              type="checkbox"
+              checked={wantsAdmin}
+              onChange={(e) => setWantsAdmin(e.target.checked)}
+            />
+            <span className="slider round"></span>
+          </div>
         </label>
 
         <button
@@ -582,7 +582,7 @@ function App() {
         >
           {t('login.laptop_host')}
         </button>
-        
+
         <p className="host-warning" style={{ margin: 0 }}>{t('login.host_warning')}</p>
       </div>
     </div>

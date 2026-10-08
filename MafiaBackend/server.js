@@ -271,6 +271,8 @@ io.on('connection', (socket) => {
 
     socket.on('kickAll', () => {
         if (gameTimer) clearTimeout(gameTimer);
+
+        // 1. Signal an alle Clients senden, damit sie localStorage leeren und neuladen
         io.emit('forceReload');
 
         players = {};
@@ -280,13 +282,15 @@ io.on('connection', (socket) => {
         readyPlayers = [];
         tieCandidates = [];
         phaseEndTime = 0;
+        hostSocketId = null;
 
         io.emit('updatePlayerList', []);
         io.emit('gameReset', []);
 
+        // 2. Kurz warten (1 Sekunde), damit das forceReload-Signal garantiert bei allen ankommt, erst danach trennen
         setTimeout(() => {
-            io.disconnectSockets();
-        }, 500);
+            io.disconnectSockets(true);
+        }, 1000);
     });
 
     socket.on('disconnectPlayer', (pid) => {
