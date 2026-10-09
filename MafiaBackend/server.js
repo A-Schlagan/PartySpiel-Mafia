@@ -462,7 +462,6 @@ function startDay() {
     }
 
     let deadPlayers = [];
-    let message = "shots_fired";
 
     if (mafiaTargetId) {
         const mafiaVictim = players[mafiaTargetId];
@@ -475,19 +474,15 @@ function startDay() {
         if (ladyId && mafiaTargetId === ladyId) {
             if (nightActions.doctorTarget === ladyId) {
                 targetSaved = true;
-                message = "shots_fired";
                 nightReport += `🛡️ ERGEBNIS: Lady (${mafiaVictim.name}) wurde vom Arzt GEHEILT!\n`;
             } else {
                 deadPlayers.push(ladyId);
-                message = "shots_fired";
                 nightReport += `💀 ERGEBNIS: Lady (${mafiaVictim.name}) wurde ERMORDET.\n`;
                 if (ladyVictimId && ladyVictimId !== ladyId && players[ladyVictimId] && players[ladyVictimId].isAlive) {
                     if (nightActions.doctorTarget === ladyVictimId) {
-                        message = "shots_fired";
                         nightReport += `🛡️ ERGEBNIS: Begleiter (${players[ladyVictimId].name}) wurde vom Arzt GEHEILT.\n`;
                     } else {
                         deadPlayers.push(ladyVictimId);
-                        message = "shots_fired";
                         nightReport += `💀💀 ERGEBNIS: Begleiter (${players[ladyVictimId].name}) starb auch (Rolle: ${players[ladyVictimId].role}).\n`;
                     }
                 }
@@ -495,17 +490,14 @@ function startDay() {
         } else {
             if (nightActions.doctorTarget === mafiaTargetId) {
                 targetSaved = true;
-                message = "shots_fired";
                 nightReport += `🛡️ ERGEBNIS: ${mafiaVictim.name} wurde vom Arzt GEHEILT.\n`;
             } else if (ladyVictimId === mafiaTargetId) {
                 targetSaved = true;
-                message = "shots_fired";
                 nightReport += `💋 ERGEBNIS: ${mafiaVictim.name} überlebte durch Lady-Besuch.\n`;
             }
 
             if (!targetSaved) {
                 deadPlayers.push(mafiaTargetId);
-                message = "shots_fired";
                 nightReport += `💀 ERGEBNIS: ${mafiaVictim.name} wurde ERMORDET. (Rolle: ${mafiaVictim.role})\n`;
             }
         }
@@ -517,23 +509,34 @@ function startDay() {
     });
 
     io.emit('gameStateUpdate', { gamePhase, players: Object.values(players) });
+    
     if (deadPlayers.length > 0) {
         io.emit('playSound', 'gunshoot');
         setTimeout(() => {
             io.emit('playSound', 'morning');
             io.emit('dayAnnouncement', {
-                title: "new_day",
-                text: message
+                title: "shots_fired", 
+                text: "someone_died"  
             });
             startDiscussionTimer();
         }, 3000);
     } else {
         console.log("🌞 Niemand gestorben -> Sende 'morning'");
         io.emit('playSound', 'morning');
-        io.emit('dayAnnouncement', {
-            title: "peaceful_morning",
-            text: message
-        });
+        
+        if (mafiaTargetId) {
+            // Mafia hat geschossen, aber Arzt/Lady hat gerettet
+            io.emit('dayAnnouncement', {
+                title: "shots_fired", 
+                text: "nobody_died"   
+            });
+        } else {
+            // Mafia hat sich nicht geeinigt = Keine Schüsse
+            io.emit('dayAnnouncement', {
+                title: "peaceful_morning", 
+                text: "no_shots"
+            });
+        }
         startDiscussionTimer();
     }
 }

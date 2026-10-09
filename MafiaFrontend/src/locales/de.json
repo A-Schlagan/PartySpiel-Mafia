@@ -151,6 +151,9 @@
     "all_voted": "Alle haben abgestimmt!",
     "discussion_started": "🎤 {{val1}} eröffnet die Diskussion!",
     "hung_announcement": "⚖️ {{val1}} wurde gehängt ({{val2}} Stimmen)!",
-    "tie_announcement": "⚖️ Stichwahl zwischen {{val1}} Spielern!"
+    "tie_announcement": "⚖️ Stichwahl zwischen {{val1}} Spielern!",
+    "someone_died": "Кто-то не пережил эту ночь...",
+    "nobody_died": "Но, к счастью, никто не погиб!",
+    "no_shots": "Ночь прошла тихо, нападать было не на кого."
   }
 }
