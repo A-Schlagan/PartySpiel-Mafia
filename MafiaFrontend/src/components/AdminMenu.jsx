@@ -11,6 +11,8 @@ export default function AdminMenu({ socket, isAdmin, onLogout }) {
     const handleAction = (action) => {
         if (!socket) return;
 
+        setIsOpen(false);
+
         if (action === 'reset') {
             Swal.fire({
                 title: t('admin.reset_title'),
@@ -26,7 +28,6 @@ export default function AdminMenu({ socket, isAdmin, onLogout }) {
             }).then((result) => {
                 if (result.isConfirmed) {
                     socket.emit('resetGame');
-                    setIsOpen(false);
                 }
             });
         }
@@ -46,7 +47,6 @@ export default function AdminMenu({ socket, isAdmin, onLogout }) {
             }).then((result) => {
                 if (result.isConfirmed) {
                     socket.emit('kickAll');
-                    setIsOpen(false);
                 }
             });
         }
@@ -58,6 +58,7 @@ export default function AdminMenu({ socket, isAdmin, onLogout }) {
                 {isAdmin ? '⚙️' : '❌'}
             </button>
 
+            {/* ausklappbares Menü */}
             {isOpen && (
                 <>
                     <div className="menu-backdrop" onClick={() => setIsOpen(false)} />

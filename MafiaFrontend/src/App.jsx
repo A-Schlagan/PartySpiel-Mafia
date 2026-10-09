@@ -100,10 +100,14 @@ function App() {
   const logout = () => {
     if (socket) {
       socket.emit('disconnectPlayer', playerId.current);
-      socket.disconnect();
     }
-    localStorage.clear();
-    window.location.reload();
+
+    localStorage.removeItem("mafia_name");
+    localStorage.removeItem("mafia_pid");
+    localStorage.removeItem("mafia_isAdmin");
+    setTimeout(() => {
+      window.location.reload();
+    }, 200);
   };
 
   const handleHostAction = (title, text, actionCallback, confirmColor = '#d33') => {
