@@ -37,6 +37,8 @@
     "detective_title": "DETEKTIV",
     "detective_choose": "Eine Person darfst du prüfen!",
     "detective_done": "🕵️‍♂️ Jetzt weißt du es... Und dieses Wissen könnte dein letztes sein.",
+    "detective_result_mafia": "MAFIA! 😈",
+    "detective_result_citizen": "Bürger. 😇",
     "lady_title": "LADY",
     "lady_choose": "Wen möchtest du besuchen?",
     "lady_desc": "Derjenige wird HEUTE NACHT geschützt. Wirst DU getötet, sterbt ihr BEIDE",
@@ -92,7 +94,7 @@
     "detective": "Detektiv",
     "lady": "Lady",
     "spielleiter": "Spielleiter",
-    "not_assigned": "Noch nicht verteilt"
+    "not_assigned": "Bürger"
   },
   "host_console": {
     "master_control": "MASTER CONTROL",
@@ -152,8 +154,8 @@
     "discussion_started": "🎤 {{val1}} eröffnet die Diskussion!",
     "hung_announcement": "⚖️ {{val1}} wurde gehängt ({{val2}} Stimmen)!",
     "tie_announcement": "⚖️ Stichwahl zwischen {{val1}} Spielern!",
-    "someone_died": "Кто-то не пережил эту ночь...",
-    "nobody_died": "Но, к счастью, никто не погиб!",
-    "no_shots": "Ночь прошла тихо, нападать было не на кого."
+    "someone_died": "Jemand hat diese Nacht nicht überlebt...",
+    "nobody_died": "Aber zum Glück ist niemand gestorben!",
+    "no_shots": "Die Nacht verlief ruhig, niemand wurde angegriffen."
   }
 }

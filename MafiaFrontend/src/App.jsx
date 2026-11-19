@@ -290,8 +290,8 @@ function App() {
       socket.on('detectiveResult', (data) => {
         if (!isHostConsole) {
           const messageHtml = data.isEvil
-            ? '<div class="pulse-text">MAFIA! 😈</div>'
-            : '<div class="pulse-text" style="color: #28a745">Bürger. 😇</div>';
+            ? `<div class="pulse-text">${t('night.detective_result_mafia')}</div>`
+            : `<div class="pulse-text" style="color: #28a745">${t('night.detective_result_citizen')}</div>`;
           Swal.fire({
             html: messageHtml,
             timer: 5000,

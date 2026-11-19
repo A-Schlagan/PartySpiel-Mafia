@@ -37,6 +37,8 @@
     "detective_title": "ДЕТЕКТИВ",
     "detective_choose": "Ты можешь проверить одного человека!",
     "detective_done": "🕵️‍♂️ Теперь ты знаешь правду... И это знание может стать твоим последним.",
+    "detective_result_mafia": "МАФИЯ! 😈",
+    "detective_result_citizen": "Мирный житель. 😇",
     "lady_title": "ЛЕДИ",
     "lady_choose": "Кого ты хочешь навестить?",
     "lady_desc": "Этот человек будет защищен СЕГОДНЯ НОЧЬЮ. Если убьют ТЕБЯ, вы умрете ОБА",
@@ -92,7 +94,7 @@
     "detective": "Детектив",
     "lady": "Леди",
     "spielleiter": "Ведущий",
-    "not_assigned": "Ещё не распределена"
+    "not_assigned": "Мирный житель"
   },
   "host_console": {
     "master_control": "ГЛАВНЫЙ ПУЛЬТ",
